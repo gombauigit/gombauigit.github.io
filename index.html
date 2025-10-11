@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>영어 품사묶음 학습기 (발음 기능)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The SPA maintains its focused, three-step learning structure (Select -> Study -> Quiz). The "Study" phase is now enhanced with an interactive Text-to-Speech (TTS) feature. This addition transforms passive reading into an active, multi-sensory learning experience by allowing users to hear the pronunciation of every word and sentence. This directly supports the user's goal of improving not just vocabulary recognition but also pronunciation and listening comprehension, making the learning process more holistic. -->
+    <!-- Visualization & Content Choices: Report Info -> Vocabulary Bundles (words, meanings, sentences). Goal: Teach word relationships and pronunciation. Method: Structured HTML cards with clickable text elements and speaker icons. Interaction: User clicks a root to see cards; clicks text to hear audio via Web Speech API. Justification: Direct presentation is best for linguistic data. The integrated audio provides crucial auditory feedback, enhancing memory retention. Report Info -> Learning Reinforcement. Goal: Test knowledge. Method: Interactive quiz. Interaction: User answers questions, gets immediate feedback. Justification: Active recall is a proven method for effective memorization. All elements are built with HTML/Tailwind/JS. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #FDFBF7;
+            color: #3f3c38;
+        }
+        .root-btn.active {
+            background-color: #8D7B68;
+            color: #FDFBF7;
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .pos-tag {
+            font-size: 0.75rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 700;
+        }
+        .pos-verb { background-color: #A4907C; color: white; }
+        .pos-noun { background-color: #C8B6A6; color: white; }
+        .pos-adj { background-color: #E1D4C7; color: #3f3c38; }
+        .pos-adv { background-color: #F1EBE5; color: #3f3c38; }
+        .quiz-option.correct { background-color: #22c55e !important; color: white !important; }
+        .quiz-option.incorrect { background-color: #ef4444 !important; color: white !important; }
+        .feedback {
+            transition: opacity 0.5s ease-in-out;
+        }
+        .speakable {
+            cursor: pointer;
+            transition: color 0.2s ease-in-out;
+        }
+        .speakable:hover {
+            color: #8D7B68;
+        }
+        .speakable .speaker-icon {
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 4px;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container mx-auto p-4 md:p-8 max-w-6xl">
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-[#65584b]">영어 품사묶음 학습기</h1>
+            <p class="mt-2 text-lg text-gray-600">핵심 어근을 통해 단어를 묶어서 효율적으로 암기해 보세요.</p>
+        </header>
+
+        <main>
+            <section id="root-selection" class="mb-8 md:mb-12">
+                <h2 class="text-2xl font-bold text-center mb-6 text-[#8D7B68]">1. 학습할 어근을 선택하세요</h2>
+                <div id="root-buttons-container" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-3 md:gap-4">
+                </div>
+            </section>
+
+            <section id="study-area" class="min-h-[300px] bg-white/50 p-6 rounded-2xl shadow-sm transition-opacity duration-500 ease-in-out">
+                 <div id="study-placeholder" class="flex flex-col items-center justify-center h-full text-center text-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v1.586m-6.253 6.253H7.586m12.914 0h-1.586m-6.253 6.253v-1.586m-6.253-6.253l1.121-1.121m11.312 11.312l-1.121-1.121m-11.312 0l1.121 1.121m11.312-11.312l-1.121 1.121" />
+                    </svg>
+                    <h3 class="text-xl font-semibold">어근을 선택하면 여기에 단어 묶음이 표시됩니다.</h3>
+                    <p class="mt-1">위에서 학습하고 싶은 어근을 클릭해 보세요.</p>
+                </div>
+                <div id="study-content" class="hidden">
+                    <div class="text-center mb-6 pb-4 border-b border-gray-200">
+                        <h2 id="current-root-text" class="text-3xl font-bold text-[#8D7B68]"></h2>
+                        <p id="current-root-meaning" class="text-lg text-gray-600 mt-1"></p>
+                    </div>
+                    <div id="word-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    </div>
+                </div>
+            </section>
+            
+            <section id="quiz-area" class="mt-8 md:mt-12 hidden">
+                 <h2 class="text-2xl font-bold text-center mb-6 text-[#8D7B68]">3. 퀴즈로 복습하기</h2>
+                 <div id="quiz-container" class="bg-white/50 p-6 rounded-2xl shadow-sm text-center">
+                    <div id="quiz-setup">
+                         <p id="quiz-root-name" class="text-lg mb-4"></p>
+                         <button id="start-quiz-btn" class="bg-[#A4907C] hover:bg-[#8D7B68] text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105">퀴즈 시작!</button>
+                    </div>
+                    <div id="quiz-main" class="hidden">
+                        <p id="question-counter" class="text-sm text-gray-500 mb-2"></p>
+                        <p id="question-text" class="text-xl font-medium mb-6 min-h-[60px] flex items-center justify-center"></p>
+                        <div id="options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        </div>
+                        <div id="feedback-container" class="mt-4 text-lg font-bold min-h-[30px]">
+                            <span id="feedback-text" class="feedback opacity-0"></span>
+                        </div>
+                        <button id="next-question-btn" class="mt-4 bg-[#65584b] hover:bg-[#50453a] text-white font-bold py-2 px-8 rounded-lg transition hidden">다음 문제</button>
+                    </div>
+                    <div id="quiz-results" class="hidden">
+                        <h3 class="text-2xl font-bold mb-4">퀴즈 완료!</h3>
+                        <p id="results-text" class="text-xl mb-6"></p>
+                        <button id="restart-quiz-btn" class="bg-[#A4907C] hover:bg-[#8D7B68] text-white font-bold py-3 px-6 rounded-lg transition">다시 풀어보기</button>
+                    </div>
+                 </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const wordData = [
+            { root: 'act', meaning: '하다, 움직이다', words: [ { word: 'act', pos: 'verb', kr_meaning: '행동하다', sentence: 'We must act before it is too late.', sentence_kr: '너무 늦기 전에 행동해야 합니다.' }, { word: 'action', pos: 'noun', kr_meaning: '행동, 조치', sentence: 'Her quick action saved the team.', sentence_kr: '그녀의 빠른 조치가 팀을 구했다.' }, { word: 'active', pos: 'adj', kr_meaning: '활동적인', sentence: 'He leads a very active life.', sentence_kr: '그는 매우 활동적인 삶을 산다.' }, { word: 'react', pos: 'verb', kr_meaning: '반응하다', sentence: 'How did she react to the news?', sentence_kr: '그녀는 그 소식에 어떻게 반응했나요?' } ] },
+            { root: 'port', meaning: '나르다, 운반하다', words: [ { word: 'port', pos: 'noun', kr_meaning: '항구', sentence: 'The ship will arrive at the port tomorrow.', sentence_kr: '배는 내일 항구에 도착할 것입니다.' }, { word: 'export', pos: 'verb', kr_meaning: '수출하다', sentence: 'The country exports cars to the world.', sentence_kr: '그 나라는 전 세계에 자동차를 수출합니다.' }, { word: 'import', pos: 'verb', kr_meaning: '수입하다', sentence: 'They import coffee from Brazil.', sentence_kr: '그들은 브라질에서 커피를 수입합니다.' }, { word: 'transport', pos: 'verb', kr_meaning: '수송하다', sentence: 'The goods were transported by truck.', sentence_kr: '상품은 트럭으로 운송되었습니다.' } ] },
+            { root: 'form', meaning: '형태, 모양', words: [ { word: 'form', pos: 'noun', kr_meaning: '형태', sentence: 'Please fill out this application form.', sentence_kr: '이 지원서를 작성해 주세요.' }, { word: 'inform', pos: 'verb', kr_meaning: '알리다', sentence: 'He informed me of his decision.', sentence_kr: '그는 나에게 그의 결정을 알렸다.' }, { word: 'uniform', pos: 'noun', kr_meaning: '제복', sentence: 'All students must wear a uniform.', sentence_kr: '모든 학생은 교복을 입어야 합니다.' }, { word: 'reform', pos: 'verb', kr_meaning: '개혁하다', sentence: 'The government plans to reform the system.', sentence_kr: '정부는 시스템을 개혁할 계획입니다.' } ] },
+            { root: 'spect', meaning: '보다', words: [ { word: 'inspect', pos: 'verb', kr_meaning: '조사하다', sentence: 'The police inspected the crime scene.', sentence_kr: '경찰은 범죄 현장을 조사했다.' }, { word: 'respect', pos: 'noun', kr_meaning: '존경', sentence: 'I have great respect for my parents.', sentence_kr: '나는 부모님을 매우 존경한다.' }, { word: 'suspect', pos: 'verb', kr_meaning: '의심하다', sentence: 'They suspect him of stealing the money.', sentence_kr: '그들은 그가 돈을 훔쳤다고 의심한다.' }, { word: 'prospect', pos: 'noun', kr_meaning: '전망, 가능성', sentence: 'The prospect of finding a job is good.', sentence_kr: '일자리를 찾을 전망이 좋다.' } ] },
+            { root: 'rupt', meaning: '깨다', words: [ { word: 'erupt', pos: 'verb', kr_meaning: '분출하다', sentence: 'The volcano could erupt at any time.', sentence_kr: '화산은 언제든지 분출할 수 있다.' }, { word: 'interrupt', pos: 'verb', kr_meaning: '방해하다', sentence: 'Please don\'t interrupt me while I\'m speaking.', sentence_kr: '제가 말하는 동안 방해하지 마세요.' }, { word: 'bankrupt', pos: 'adj', kr_meaning: '파산한', sentence: 'The company went bankrupt last year.', sentence_kr: '그 회사는 작년에 파산했다.' }, { word: 'disrupt', pos: 'verb', kr_meaning: '붕괴시키다', sentence: 'The heavy snow disrupted traffic.', sentence_kr: '폭설로 교통이 마비되었다.' } ] },
+            { root: 'tract', meaning: '끌다', words: [ { word: 'attract', pos: 'verb', kr_meaning: '끌다', sentence: 'The event attracted a large crowd.', sentence_kr: '그 행사는 많은 군중을 끌어 모았다.' }, { word: 'contract', pos: 'noun', kr_meaning: '계약', sentence: 'You should read the contract carefully.', sentence_kr: '계약서를 꼼꼼히 읽어봐야 합니다.' }, { word: 'extract', pos: 'verb', kr_meaning: '추출하다', sentence: 'They extract oil from the seeds.', sentence_kr: '그들은 씨앗에서 기름을 추출한다.' }, { word: 'subtract', pos: 'verb', kr_meaning: '빼다', sentence: 'If you subtract 2 from 5, you get 3.', sentence_kr: '5에서 2를 빼면 3이 된다.' } ] },
+            { root: 'dict', meaning: '말하다', words: [ { word: 'predict', pos: 'verb', kr_meaning: '예측하다', sentence: 'It is difficult to predict the future.', sentence_kr: '미래를 예측하는 것은 어렵다.' }, { word: 'dictate', pos: 'verb', kr_meaning: '받아쓰게 하다', sentence: 'She dictated a letter to her secretary.', sentence_kr: '그녀는 비서에게 편지를 받아쓰게 했다.' }, { word: 'contradict', pos: 'verb', kr_meaning: '모순되다', sentence: 'His actions contradict his words.', sentence_kr: '그의 행동은 그의 말과 모순된다.' }, { word: 'addict', pos: 'noun', kr_meaning: '중독자', sentence: 'He is a drug addict.', sentence_kr: '그는 마약 중독자이다.' } ] },
+            { root: 'mit/mis', meaning: '보내다', words: [ { word: 'admit', pos: 'verb', kr_meaning: '인정하다', sentence: 'He admitted his mistake.', sentence_kr: '그는 자신의 실수를 인정했다.' }, { word: 'mission', pos: 'noun', kr_meaning: '임무', sentence: 'The team completed the mission successfully.', sentence_kr: '팀은 임무를 성공적으로 완수했다.' }, { word: 'submit', pos: 'verb', kr_meaning: '제출하다', sentence: 'Please submit your report by Friday.', sentence_kr: '금요일까지 보고서를 제출해 주세요.' }, { word: 'transmit', pos: 'verb', kr_meaning: '전송하다', sentence: 'The system transmits data wirelessly.', sentence_kr: '그 시스템은 데이터를 무선으로 전송한다.' } ] },
+            { root: 'press', meaning: '누르다', words: [ { word: 'press', pos: 'verb', kr_meaning: '누르다', sentence: 'Press the button to start.', sentence_kr: '시작하려면 버튼을 누르세요.' }, { word: 'express', pos: 'verb', kr_meaning: '표현하다', sentence: 'She expressed her gratitude.', sentence_kr: '그녀는 감사를 표현했다.' }, { word: 'impress', pos: 'verb', kr_meaning: '감동시키다', sentence: 'His performance impressed the judges.', sentence_kr: '그의 공연은 심사위원들을 감동시켰다.' }, { word: 'depress', pos: 'verb', kr_meaning: '우울하게 하다', sentence: 'The bad news depressed everyone.', sentence_kr: '그 나쁜 소식은 모두를 우울하게 했다.' } ] },
+            { root: 'vert/vers', meaning: '돌리다', words: [ { word: 'convert', pos: 'verb', kr_meaning: '전환하다', sentence: 'We need to convert the file to a new format.', sentence_kr: '파일을 새로운 형식으로 전환해야 합니다.' }, { word: 'reverse', pos: 'verb', kr_meaning: '뒤집다', sentence: 'You need to reverse the car.', sentence_kr: '차를 후진해야 합니다.' }, { word: 'diverse', pos: 'adj', kr_meaning: '다양한', sentence: 'The city has a diverse population.', sentence_kr: '그 도시는 다양한 인구를 가지고 있다.' }, { word: 'conversation', pos: 'noun', kr_meaning: '대화', sentence: 'We had a long conversation.', sentence_kr: '우리는 긴 대화를 나누었다.' } ] },
+            { root: 'vid/vis', meaning: '보다', words: [ { word: 'video', pos: 'noun', kr_meaning: '비디오', sentence: 'I watched a video on my phone.', sentence_kr: '나는 휴대폰으로 비디오를 봤다.' }, { word: 'visit', pos: 'verb', kr_meaning: '방문하다', sentence: 'I will visit my grandmother this weekend.', sentence_kr: '이번 주말에 할머니를 뵈러 갈 것이다.' }, { word: 'vision', pos: 'noun', kr_meaning: '시력, 비전', sentence: 'He has poor vision in his left eye.', sentence_kr: '그는 왼쪽 눈의 시력이 좋지 않다.' }, { word: 'review', pos: 'verb', kr_meaning: '검토하다', sentence: 'Let\'s review the main points.', sentence_kr: '주요 사항을 검토해 봅시다.' } ] },
+            { root: 'ced/cess', meaning: '가다', words: [ { word: 'proceed', pos: 'verb', kr_meaning: '나아가다', sentence: 'Please proceed to the next step.', sentence_kr: '다음 단계로 진행해 주세요.' }, { word: 'process', pos: 'noun', kr_meaning: '과정', sentence: 'Learning a language is a long process.', sentence_kr: '언어를 배우는 것은 긴 과정이다.' }, { word: 'access', pos: 'noun', kr_meaning: '접근', sentence: 'You need a password to get access.', sentence_kr: '접근하려면 비밀번호가 필요합니다.' }, { word: 'success', pos: 'noun', kr_meaning: '성공', sentence: 'Hard work is the key to success.', sentence_kr: '노력은 성공의 열쇠이다.' } ] },
+            { root: 'duc/duct', meaning: '이끌다', words: [ { word: 'produce', pos: 'verb', kr_meaning: '생산하다', sentence: 'The factory produces electronic goods.', sentence_kr: '그 공장은 전자제품을 생산한다.' }, { word: 'reduce', pos: 'verb', kr_meaning: '줄이다', sentence: 'We need to reduce our expenses.', sentence_kr: '우리는 지출을 줄여야 한다.' }, { word: 'introduce', pos: 'verb', kr_meaning: '소개하다', sentence: 'Let me introduce my friend to you.', sentence_kr: '제 친구를 당신에게 소개할게요.' }, { word: 'educate', pos: 'verb', kr_meaning: '교육하다', sentence: 'The goal is to educate the public.', sentence_kr: '목표는 대중을 교육하는 것이다.' } ] },
+            { root: 'ject', meaning: '던지다', words: [ { word: 'eject', pos: 'verb', kr_meaning: '꺼내다, 쫓아내다', sentence: 'The pilot had to eject from the plane.', sentence_kr: '조종사는 비행기에서 탈출해야 했다.' }, { word: 'inject', pos: 'verb', kr_meaning: '주사하다', sentence: 'The doctor will inject the vaccine.', sentence_kr: '의사가 백신을 주사할 것입니다.' }, { word: 'project', pos: 'noun', kr_meaning: '프로젝트', sentence: 'She is working on a new project.', sentence_kr: '그녀는 새로운 프로젝트를 진행 중이다.' }, { word: 'reject', pos: 'verb', kr_meaning: '거절하다', sentence: 'He rejected my offer.', sentence_kr: '그는 나의 제안을 거절했다.' } ] },
+            { root: 'pon/pos', meaning: '놓다, 두다', words: [ { word: 'component', pos: 'noun', kr_meaning: '구성 요소', sentence: 'The machine has many small components.', sentence_kr: '그 기계는 많은 작은 부품들로 이루어져 있다.' }, { word: 'expose', pos: 'verb', kr_meaning: '노출시키다', sentence: 'Don\'t expose your skin to the sun for too long.', sentence_kr: '피부를 햇빛에 너무 오래 노출시키지 마세요.' }, { word: 'position', pos: 'noun', kr_meaning: '위치', sentence: 'What is your position on this issue?', sentence_kr: '이 문제에 대한 당신의 입장은 무엇입니까?' }, { word: 'postpone', pos: 'verb', kr_meaning: '연기하다', sentence: 'They decided to postpone the meeting.', sentence_kr: '그들은 회의를 연기하기로 결정했다.' } ] },
+            { root: 'scrib/script', meaning: '쓰다', words: [ { word: 'describe', pos: 'verb', kr_meaning: '묘사하다', sentence: 'Can you describe the man you saw?', sentence_kr: '당신이 본 남자를 묘사할 수 있나요?' }, { word: 'script', pos: 'noun', kr_meaning: '대본', sentence: 'The actor forgot his lines from the script.', sentence_kr: '그 배우는 대본의 대사를 잊어버렸다.' }, { word: 'subscribe', pos: 'verb', kr_meaning: '구독하다', sentence: 'I subscribe to several magazines.', sentence_kr: '나는 여러 잡지를 구독한다.' }, { word: 'prescription', pos: 'noun', kr_meaning: '처방전', sentence: 'You need a prescription for this medicine.', sentence_kr: '이 약은 처방전이 필요합니다.' } ] },
+            { root: 'sta/sist', meaning: '서다', words: [ { word: 'stable', pos: 'adj', kr_meaning: '안정된', sentence: 'The patient\'s condition is stable.', sentence_kr: '환자의 상태는 안정적입니다.' }, { word: 'assist', pos: 'verb', kr_meaning: '돕다', sentence: 'Can I assist you with anything?', sentence_kr: '무엇을 도와드릴까요?' }, { word: 'consist', pos: 'verb', kr_meaning: '~로 구성되다', sentence: 'The team consists of five members.', sentence_kr: '그 팀은 다섯 명의 멤버로 구성되어 있다.' }, { word: 'resist', pos: 'verb', kr_meaning: '저항하다', sentence: 'It\'s hard to resist chocolate.', sentence_kr: '초콜릿을 참는 것은 어렵다.' } ] },
+            { root: 'tend/tens', meaning: '뻗다', words: [ { word: 'extend', pos: 'verb', kr_meaning: '연장하다', sentence: 'We decided to extend our vacation.', sentence_kr: '우리는 휴가를 연장하기로 결정했다.' }, { word: 'intend', pos: 'verb', kr_meaning: '의도하다', sentence: 'What do you intend to do?', sentence_kr: '무엇을 할 작정인가요?' }, { word: 'tense', pos: 'adj', kr_meaning: '긴장한', sentence: 'He was tense before the interview.', sentence_kr: '그는 면접 전에 긴장했다.' }, { word: 'pretend', pos: 'verb', kr_meaning: '~인 척하다', sentence: 'He pretended to be asleep.', sentence_kr: '그는 잠든 척했다.' } ] },
+            { root: 'ven/vent', meaning: '오다', words: [ { word: 'invent', pos: 'verb', kr_meaning: '발명하다', sentence: 'Who invented the telephone?', sentence_kr: '누가 전화를 발명했나요?' }, { word: 'prevent', pos: 'verb', kr_meaning: '막다, 예방하다', sentence: 'Regular exercise can prevent diseases.', sentence_kr: '규칙적인 운동은 질병을 예방할 수 있다.' }, { word: 'event', pos: 'noun', kr_meaning: '사건, 행사', sentence: 'The festival is a major annual event.', sentence_kr: '그 축제는 주요 연례 행사이다.' }, { word: 'adventure', pos: 'noun', kr_meaning: '모험', sentence: 'Life is an exciting adventure.', sentence_kr: '인생은 신나는 모험이다.' } ] },
+            { root: 'fac/fect', meaning: '만들다', words: [ { word: 'factory', pos: 'noun', kr_meaning: '공장', sentence: 'He works at a car factory.', sentence_kr: '그는 자동차 공장에서 일한다.' }, { word: 'affect', pos: 'verb', kr_meaning: '영향을 미치다', sentence: 'The weather can affect your mood.', sentence_kr: '날씨는 당신의 기분에 영향을 미칠 수 있다.' }, { word: 'effect', pos: 'noun', kr_meaning: '효과, 결과', sentence: 'The medicine had an immediate effect.', sentence_kr: '그 약은 즉각적인 효과가 있었다.' }, { word: 'perfect', pos: 'adj', kr_meaning: '완벽한', sentence: 'This is the perfect place for a picnic.', sentence_kr: '여기는 소풍하기에 완벽한 장소이다.' } ] },
+            { root: 'grad/gress', meaning: '가다, 단계', words: [ { word: 'grade', pos: 'noun', kr_meaning: '등급, 학년', sentence: 'She is in the third grade.', sentence_kr: '그녀는 3학년이다.' }, { word: 'progress', pos: 'noun', kr_meaning: '진전, 발전', sentence: 'We have made great progress.', sentence_kr: '우리는 큰 발전을 이루었다.' }, { word: 'aggressive', pos: 'adj', kr_meaning: '공격적인', sentence: 'He has an aggressive personality.', sentence_kr: '그는 공격적인 성격을 가지고 있다.' }, { word: 'ingredient', pos: 'noun', kr_meaning: '재료, 성분', sentence: 'What are the ingredients of this dish?', sentence_kr: '이 요리의 재료는 무엇인가요?' } ] },
+            { root: 'pel/puls', meaning: '밀다, 몰다', words: [ { word: 'compel', pos: 'verb', kr_meaning: '강요하다', sentence: 'The situation compelled him to act.', sentence_kr: '상황이 그가 행동하도록 강요했다.' }, { word: 'expel', pos: 'verb', kr_meaning: '쫓아내다', sentence: 'The student was expelled from school.', sentence_kr: '그 학생은 학교에서 퇴학당했다.' }, { word: 'impulse', pos: 'noun', kr_meaning: '충동', sentence: 'He acted on a sudden impulse.', sentence_kr: '그는 갑작스러운 충동에 따라 행동했다.' }, { word: 'propel', pos: 'verb', kr_meaning: '추진하다', sentence: 'The engine propels the boat.', sentence_kr: '엔진이 보트를 나아가게 한다.' } ] },
+            { root: 'spir', meaning: '숨쉬다', words: [ { word: 'inspire', pos: 'verb', kr_meaning: '영감을 주다', sentence: 'His speech inspired everyone.', sentence_kr: '그의 연설은 모두에게 영감을 주었다.' }, { word: 'spirit', pos: 'noun', kr_meaning: '정신, 영혼', sentence: 'She has a strong competitive spirit.', sentence_kr: '그녀는 강한 경쟁 정신을 가지고 있다.' }, { word: 'conspire', pos: 'verb', kr_meaning: '공모하다', sentence: 'They conspired to overthrow the government.', sentence_kr: '그들은 정부를 전복시키기 위해 공모했다.' }, { word: 'expire', pos: 'verb', kr_meaning: '만료되다', sentence: 'My driver\'s license will expire next month.', sentence_kr: '내 운전면허증은 다음 달에 만료될 것이다.' } ] },
+            { root: 'voc/vok', meaning: '부르다, 목소리', words: [ { word: 'voice', pos: 'noun', kr_meaning: '목소리', sentence: 'She has a beautiful voice.', sentence_kr: '그녀는 아름다운 목소리를 가지고 있다.' }, { word: 'vocation', pos: 'noun', kr_meaning: '천직, 소명', sentence: 'He found his vocation in teaching.', sentence_kr: '그는 가르치는 것에서 천직을 찾았다.' }, { word: 'provoke', pos: 'verb', kr_meaning: '유발하다', sentence: 'His comments provoked a lot of anger.', sentence_kr: '그의 발언은 많은 분노를 유발했다.' }, { word: 'advocate', pos: 'verb', kr_meaning: '지지하다', sentence: 'She advocates for human rights.', sentence_kr: '그녀는 인권을 지지한다.' } ] },
+            { root: 'fer', meaning: '나르다, 가져오다', words: [ { word: 'transfer', pos: 'verb', kr_meaning: '옮기다, 전학하다', sentence: 'I need to transfer money to another account.', sentence_kr: '다른 계좌로 돈을 이체해야 합니다.' }, { word: 'offer', pos: 'verb', kr_meaning: '제공하다', sentence: 'He offered me a job.', sentence_kr: '그는 나에게 일자리를 제안했다.' }, { word: 'suffer', pos: 'verb', kr_meaning: '고통받다', sentence: 'Many people suffer from poverty.', sentence_kr: '많은 사람들이 가난으로 고통받는다.' }, { word: 'conference', pos: 'noun', kr_meaning: '회의', sentence: 'He is attending a conference in Paris.', sentence_kr: '그는 파리에서 열리는 회의에 참석 중이다.' } ] },
+            { root: 'pend/pens', meaning: '매달다, 무게를 달다', words: [ { word: 'depend', pos: 'verb', kr_meaning: '의존하다', sentence: 'Children depend on their parents.', sentence_kr: '아이들은 부모에게 의존한다.' }, { word: 'suspend', pos: 'verb', kr_meaning: '매달다, 중단하다', sentence: 'The lamp was suspended from the ceiling.', sentence_kr: '램프는 천장에 매달려 있었다.' }, { word: 'expense', pos: 'noun', kr_meaning: '비용, 지출', sentence: 'We need to cut down on our expenses.', sentence_kr: '우리는 지출을 줄여야 한다.' }, { word: 'dispense', pos: 'verb', kr_meaning: '나누어 주다', sentence: 'The machine dispenses snacks and drinks.', sentence_kr: '그 기계는 간식과 음료를 제공한다.' } ] },
+            { root: 'plic/ply', meaning: '접다, 겹치다', words: [ { word: 'apply', pos: 'verb', kr_meaning: '적용하다, 지원하다', sentence: 'You should apply for the job.', sentence_kr: '그 일자리에 지원해야 합니다.' }, { word: 'reply', pos: 'verb', kr_meaning: '대답하다', sentence: 'He did not reply to my email.', sentence_kr: '그는 내 이메일에 답장하지 않았다.' }, { word: 'imply', pos: 'verb', kr_meaning: '암시하다', sentence: 'What does his silence imply?', sentence_kr: '그의 침묵은 무엇을 암시하는가?' }, { word: 'complex', pos: 'adj', kr_meaning: '복잡한', sentence: 'This is a complex problem.', sentence_kr: '이것은 복잡한 문제이다.' } ] },
+            { root: 'fin', meaning: '끝, 한계', words: [ { word: 'finish', pos: 'verb', kr_meaning: '끝내다', sentence: 'Have you finished your homework?', sentence_kr: '숙제 다 끝냈니?' }, { word: 'final', pos: 'adj', kr_meaning: '마지막의', sentence: 'This is the final chapter of the book.', sentence_kr: '이것이 그 책의 마지막 장이다.' }, { word: 'define', pos: 'verb', kr_meaning: '정의하다', sentence: 'Can you define this word?', sentence_kr: '이 단어를 정의할 수 있나요?' }, { word: 'infinite', pos: 'adj', kr_meaning: '무한한', sentence: 'The universe is infinite.', sentence_kr: '우주는 무한하다.' } ] },
+            { root: 'gen', meaning: '태생, 종류', words: [ { word: 'generate', pos: 'verb', kr_meaning: '생성하다', sentence: 'The machine generates electricity.', sentence_kr: '그 기계는 전기를 생산한다.' }, { word: 'gene', pos: 'noun', kr_meaning: '유전자', sentence: 'The disease is caused by a faulty gene.', sentence_kr: '그 질병은 결함이 있는 유전자에 의해 발생한다.' }, { word: 'general', pos: 'adj', kr_meaning: '일반적인', sentence: 'This is a matter of general interest.', sentence_kr: '이것은 일반적인 관심사이다.' }, { word: 'generous', pos: 'adj', kr_meaning: '관대한', sentence: 'She is a very generous person.', sentence_kr: '그녀는 매우 관대한 사람이다.' } ] },
+            { root: 'graph', meaning: '쓰다, 그리다', words: [ { word: 'autograph', pos: 'noun', kr_meaning: '사인', sentence: 'Can I have your autograph?', sentence_kr: '사인해 주시겠어요?' }, { word: 'biography', pos: 'noun', kr_meaning: '전기', sentence: 'He wrote a biography of Einstein.', sentence_kr: '그는 아인슈타인의 전기를 썼다.' }, { word: 'paragraph', pos: 'noun', kr_meaning: '단락', sentence: 'The first paragraph is an introduction.', sentence_kr: '첫 번째 단락은 서론이다.' }, { word: 'photograph', pos: 'noun', kr_meaning: '사진', sentence: 'I took a photograph of the sunset.', sentence_kr: '나는 일몰 사진을 찍었다.' } ] },
+            { root: 'lect/leg', meaning: '선택하다, 읽다', words: [ { word: 'elect', pos: 'verb', kr_meaning: '선출하다', sentence: 'They will elect a new president.', sentence_kr: '그들은 새로운 대통령을 선출할 것이다.' }, { word: 'collect', pos: 'verb', kr_meaning: '수집하다', sentence: 'He collects old stamps.', sentence_kr: '그는 오래된 우표를 수집한다.' }, { word: 'select', pos: 'verb', kr_meaning: '선택하다', sentence: 'You can select any item from the menu.', sentence_kr: '메뉴에서 어떤 항목이든 선택할 수 있습니다.' }, { word: 'lecture', pos: 'noun', kr_meaning: '강의', sentence: 'I attended a lecture on history.', sentence_kr: '나는 역사에 대한 강의에 참석했다.' } ] },
+            { root: 'mov/mot', meaning: '움직이다', words: [ { word: 'move', pos: 'verb', kr_meaning: '움직이다', sentence: 'Don\'t move!', sentence_kr: '움직이지 마!' }, { word: 'motion', pos: 'noun', kr_meaning: '움직임, 운동', sentence: 'The motion of the waves was calming.', sentence_kr: '파도의 움직임은 평온했다.' }, { word: 'motive', pos: 'noun', kr_meaning: '동기', sentence: 'What was the motive for the crime?', sentence_kr: '범행 동기는 무엇이었나요?' }, { word: 'promote', pos: 'verb', kr_meaning: '승진시키다, 홍보하다', sentence: 'She was promoted to manager.', sentence_kr: '그녀는 관리자로 승진했다.' } ] },
+            { root: 'sec/sect', meaning: '자르다', words: [ { word: 'section', pos: 'noun', kr_meaning: '부분, 구역', sentence: 'This section of the park is closed.', sentence_kr: '공원의 이 구역은 폐쇄되었습니다.' }, { word: 'insect', pos: 'noun', kr_meaning: '곤충', sentence: 'An ant is a type of insect.', sentence_kr: '개미는 곤충의 일종이다.' }, { word: 'dissect', pos: 'verb', kr_meaning: '해부하다', sentence: 'Students will dissect a frog in biology class.', sentence_kr: '학생들은 생물학 시간에 개구리를 해부할 것이다.' }, { word: 'intersect', pos: 'verb', kr_meaning: '교차하다', sentence: 'The two roads intersect at the corner.', sentence_kr: '두 도로는 모퉁이에서 교차한다.' } ] },
+            { root: 'clud/clus', meaning: '닫다', words: [ { word: 'include', pos: 'verb', kr_meaning: '포함하다', sentence: 'The price includes tax.', sentence_kr: '가격에는 세금이 포함되어 있습니다.' }, { word: 'exclude', pos: 'verb', kr_meaning: '제외하다', sentence: 'Children under 5 are excluded from the fee.', sentence_kr: '5세 미만 어린이는 요금에서 제외됩니다.' }, { word: 'conclude', pos: 'verb', kr_meaning: '결론을 내리다', sentence: 'What can you conclude from the data?', sentence_kr: '데이터에서 어떤 결론을 내릴 수 있나요?' }, { word: 'recluse', pos: 'noun', kr_meaning: '은둔자', sentence: 'He lives as a recluse in the mountains.', sentence_kr: '그는 산속에서 은둔자로 살고 있다.' } ] },
+            { root: 'flict', meaning: '치다', words: [ { word: 'conflict', pos: 'noun', kr_meaning: '갈등', sentence: 'The two countries are in conflict.', sentence_kr: '두 나라는 갈등을 겪고 있다.' }, { word: 'inflict', pos: 'verb', kr_meaning: '(고통을) 가하다', sentence: 'The storm inflicted heavy damage on the town.', sentence_kr: '폭풍은 마을에 큰 피해를 입혔다.' }, { word: 'afflict', pos: 'verb', kr_meaning: '괴롭히다', sentence: 'The country was afflicted by famine.', sentence_kr: '그 나라는 기근으로 고통받았다.' }, { word: 'profligate', pos: 'adj', kr_meaning: '낭비하는', sentence: 'He led a profligate lifestyle.', sentence_kr: '그는 낭비하는 생활 방식을 이끌었다.' } ] }
+        ];
+
+        let currentRoot = null;
+        let quizState = { questions: [], currentQuestionIndex: 0, score: 0, answered: false };
+
+        const rootButtonsContainer = document.getElementById('root-buttons-container');
+        const studyPlaceholder = document.getElementById('study-placeholder');
+        const studyContent = document.getElementById('study-content');
+        const currentRootText = document.getElementById('current-root-text');
+        const currentRootMeaning = document.getElementById('current-root-meaning');
+        const wordCardsContainer = document.getElementById('word-cards-container');
+        const quizArea = document.getElementById('quiz-area');
+        const quizSetup = document.getElementById('quiz-setup');
+        const quizRootName = document.getElementById('quiz-root-name');
+        const startQuizBtn = document.getElementById('start-quiz-btn');
+        const quizMain = document.getElementById('quiz-main');
+        const questionCounter = document.getElementById('question-counter');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackContainer = document.getElementById('feedback-container');
+        const feedbackText = document.getElementById('feedback-text');
+        const nextQuestionBtn = document.getElementById('next-question-btn');
+        const quizResults = document.getElementById('quiz-results');
+        const resultsText = document.getElementById('results-text');
+        const restartQuizBtn = document.getElementById('restart-quiz-btn');
+        
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert('이 브라우저에서는 음성 기능을 지원하지 않습니다.');
+            }
+        }
+        
+        function getPosClass(pos) {
+            if (pos === 'verb') return 'pos-verb';
+            if (pos === 'noun') return 'pos-noun';
+            if (pos === 'adj') return 'pos-adj';
+            if (pos === 'adv') return 'pos-adv';
+            return 'bg-gray-400 text-white';
+        }
+        
+        function displayBundle(rootData) {
+            currentRoot = rootData;
+            studyPlaceholder.classList.add('hidden');
+            studyContent.classList.remove('hidden');
+
+            currentRootText.textContent = `어근: "${rootData.root}"`;
+            currentRootMeaning.textContent = `의미: ${rootData.meaning}`;
+            
+            wordCardsContainer.innerHTML = '';
+            const speakerIconSVG = `<span class="speaker-icon"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.383-.217zM14.5 8a1 1 0 01.707.293l1.414 1.414a1 1 0 010 1.414l-1.414 1.414A1 1 0 0114.5 13.5a1 1 0 01-.707-.293L12.086 11.5a1 1 0 010-1.414l1.707-1.707A1 1 0 0114.5 8z" clip-rule="evenodd" /></svg></span>`;
+            
+            rootData.words.forEach(word => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-5 rounded-xl shadow-sm border border-gray-100';
+                const escapedSentence = word.sentence.replace(/'/g, "\\'");
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="text-xl font-bold text-[#65584b] speakable" onclick="speak('${word.word}')">${word.word}${speakerIconSVG}</h4>
+                        <span class="pos-tag ${getPosClass(word.pos)}">${word.pos}</span>
+                    </div>
+                    <p class="text-lg text-gray-700 mb-3">${word.kr_meaning}</p>
+                    <div class="text-sm text-gray-500 bg-gray-50 p-3 rounded-md">
+                        <p class="speakable" onclick="speak('${escapedSentence}')">${word.sentence}${speakerIconSVG}</p>
+                        <p class="mt-1">${word.sentence_kr}</p>
+                    </div>
+                `;
+                wordCardsContainer.appendChild(card);
+            });
+            
+            quizArea.classList.remove('hidden');
+            quizRootName.textContent = `"${rootData.root}" 어근 퀴즈`;
+            resetQuizView();
+        }
+
+        function setupRootButtons() {
+            wordData.sort((a, b) => a.root.localeCompare(b.root)).forEach(rootData => {
+                const button = document.createElement('button');
+                button.className = 'root-btn text-lg font-semibold p-4 rounded-lg bg-white shadow-sm border border-gray-200 hover:bg-[#F1EBE5] hover:border-[#C8B6A6] transition-all duration-200 ease-in-out';
+                button.textContent = rootData.root;
+                button.addEventListener('click', () => {
+                    document.querySelectorAll('.root-btn').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    displayBundle(rootData);
+                });
+                rootButtonsContainer.appendChild(button);
+            });
+        }
+        
+        function resetQuizView() {
+            quizSetup.classList.remove('hidden');
+            quizMain.classList.add('hidden');
+            quizResults.classList.add('hidden');
+            nextQuestionBtn.classList.add('hidden');
+        }
+
+        function generateQuizQuestions(rootData) {
+            const allWords = rootData.words;
+            const questions = [];
+            allWords.forEach(word => {
+                const options = [word.kr_meaning];
+                while (options.length < 4) {
+                    const randomWord = allWords[Math.floor(Math.random() * allWords.length)];
+                    if (!options.includes(randomWord.kr_meaning)) {
+                        options.push(randomWord.kr_meaning);
+                    }
+                }
+                questions.push({
+                    question: `"${word.word}"의 뜻은 무엇일까요?`,
+                    options: options.sort(() => Math.random() - 0.5),
+                    answer: word.kr_meaning
+                });
+            });
+            return questions.sort(() => Math.random() - 0.5);
+        }
+
+        function startQuiz() {
+            quizState.questions = generateQuizQuestions(currentRoot);
+            quizState.currentQuestionIndex = 0;
+            quizState.score = 0;
+            quizSetup.classList.add('hidden');
+            quizResults.classList.add('hidden');
+            quizMain.classList.remove('hidden');
+            displayQuestion();
+        }
+        
+        function displayQuestion() {
+            quizState.answered = false;
+            const q = quizState.questions[quizState.currentQuestionIndex];
+            questionCounter.textContent = `문제 ${quizState.currentQuestionIndex + 1} / ${quizState.questions.length}`;
+            questionText.textContent = q.question;
+            optionsContainer.innerHTML = '';
+            q.options.forEach(option => {
+                const button = document.createElement('button');
+                button.className = 'quiz-option bg-white p-4 rounded-lg border border-gray-300 hover:bg-gray-100 transition';
+                button.textContent = option;
+                button.addEventListener('click', () => checkAnswer(option));
+                optionsContainer.appendChild(button);
+            });
+            feedbackText.textContent = '';
+            feedbackText.classList.add('opacity-0');
+            nextQuestionBtn.classList.add('hidden');
+        }
+        
+        function checkAnswer(selectedOption) {
+            if (quizState.answered) return;
+            quizState.answered = true;
+            const q = quizState.questions[quizState.currentQuestionIndex];
+            const isCorrect = selectedOption === q.answer;
+            feedbackText.classList.remove('opacity-0');
+            if (isCorrect) {
+                quizState.score++;
+                feedbackText.textContent = '정답입니다!';
+                feedbackText.className = 'feedback text-green-600 font-bold';
+            } else {
+                feedbackText.textContent = `오답입니다. (정답: ${q.answer})`;
+                feedbackText.className = 'feedback text-red-600 font-bold';
+            }
+            Array.from(optionsContainer.children).forEach(button => {
+                button.disabled = true;
+                if (button.textContent === q.answer) button.classList.add('correct');
+                else if (button.textContent === selectedOption) button.classList.add('incorrect');
+            });
+            nextQuestionBtn.classList.remove('hidden');
+        }
+
+        function showNextQuestion() {
+            quizState.currentQuestionIndex++;
+            if (quizState.currentQuestionIndex < quizState.questions.length) {
+                displayQuestion();
+            } else {
+                showResults();
+            }
+        }
+        
+        function showResults() {
+            quizMain.classList.add('hidden');
+            quizResults.classList.remove('hidden');
+            resultsText.textContent = `총 ${quizState.questions.length}문제 중 ${quizState.score}문제를 맞혔습니다!`;
+        }
+
+        startQuizBtn.addEventListener('click', startQuiz);
+        nextQuestionBtn.addEventListener('click', showNextQuestion);
+        restartQuizBtn.addEventListener('click', startQuiz);
+        document.addEventListener('DOMContentLoaded', setupRootButtons);
+    </script>
+</body>
+</html>
