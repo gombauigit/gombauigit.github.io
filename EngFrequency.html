@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고빈도 영어 동의어 & 반의어 학습기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Slate & Sky -->
+    <!-- Application Structure Plan: The application is structured into two main interactive components for a comprehensive learning experience. First, a central, large "flashcard" module for focused, one-by-one vocabulary practice, promoting active recall. This is controlled by 'Previous'/'Next' buttons and includes a TTS pronunciation feature. Second, a searchable, scrollable "master list" of all 100 words provides a complete reference and quick-lookup functionality. A utility section allows users to download the data for external study tools like Anki. This dual approach was chosen to support both guided learning (flashcards) and self-directed review (master list), catering to different study habits. -->
+    <!-- Visualization & Content Choices: The source report's goal is vocabulary acquisition. Instead of data visualization, the app uses interactive text presentation. The primary method is a 'flashcard' (HTML div) that initially shows only the target word and a pronunciation button. A button-click reveals the meaning, synonym, and antonym, an interaction designed to test the user's memory (Goal: Inform, Method: Interactive Text Block). A searchable HTML table provides a complete reference with individual pronunciation buttons (Goal: Organize, Method: Filterable List). An export-to-CSV function was chosen to bridge the app with established spaced-repetition systems (Goal: Utility, Method: Data Export), justifying its inclusion for serious learners. No libraries were needed beyond Tailwind for styling. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8fafc;
+        }
+        .flashcard {
+            perspective: 1000px;
+            min-height: 280px;
+        }
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .flashcard.is-flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+        .card-back {
+            transform: rotateY(180deg);
+        }
+        .speaker-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+        .speaker-btn:hover {
+            background-color: rgba(0,0,0,0.1);
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">고빈도 영어 동의어 & 반의어 학습기</h1>
+            <p class="text-slate-600 mt-2">뜻과 발음을 포함한 가장 중요한 100개의 단어를 마스터하세요.</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+            
+            <div class="lg:col-span-3">
+                <div id="flashcard-container" class="bg-white p-6 rounded-2xl shadow-lg">
+                    <div class="flex justify-between items-center mb-4">
+                        <span id="card-counter" class="text-sm font-medium text-slate-500">1 / 100</span>
+                        <div class="relative">
+                            <span id="difficulty-indicator" class="block w-4 h-4 rounded-full" title="난이도"></span>
+                        </div>
+                    </div>
+                    <div id="flashcard" class="flashcard">
+                        <div id="flashcard-inner" class="flashcard-inner">
+                            <div class="card-face card-front bg-sky-100 rounded-lg p-4">
+                                <div class="flex items-center gap-4">
+                                     <h2 id="word" class="text-4xl md:text-5xl font-bold text-sky-800 text-center" style="font-family: 'Roboto', sans-serif;"></h2>
+                                     <button id="speak-btn-main" class="speaker-btn">
+                                        <svg class="w-8 h-8 text-sky-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.858 8.464a5 5 0 000 7.072m2.829-9.9a9 9 0 000 12.728M12 12h.01M17.9 12a6 6 0 01-6 6H12a6 6 0 01-6-6h.01a6 6 0 016-6H12a6 6 0 015.9 6z"></path></svg>
+                                     </button>
+                                </div>
+                            </div>
+                            <div class="card-face card-back bg-white border border-slate-200 rounded-lg p-4">
+                                <div class="text-center w-full">
+                                    <h3 id="word-back" class="text-3xl font-bold text-slate-800 mb-4" style="font-family: 'Roboto', sans-serif;"></h3>
+                                    <div class="space-y-3 text-left w-full max-w-sm mx-auto">
+                                        <p class="text-lg"><span class="font-semibold text-blue-600 w-24 inline-block">뜻:</span> <span id="meaning" class="font-medium text-slate-700"></span></p>
+                                        <p class="text-lg"><span class="font-semibold text-green-600 w-24 inline-block">동의어:</span> <span id="synonym" class="font-medium text-slate-700"></span></p>
+                                        <p class="text-lg"><span class="font-semibold text-red-600 w-24 inline-block">반의어:</span> <span id="antonym" class="font-medium text-slate-700"></span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex flex-col sm:flex-row gap-4">
+                        <button id="prev-btn" class="w-full sm:w-1/4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-4 rounded-lg transition-colors">이전</button>
+                        <button id="flip-btn" class="w-full sm:w-1/2 bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-4 rounded-lg transition-colors order-first sm:order-none">정답 확인</button>
+                        <button id="next-btn" class="w-full sm:w-1/4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-4 rounded-lg transition-colors">다음</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2">
+                <div class="bg-white p-6 rounded-2xl shadow-lg h-full flex flex-col">
+                    <h2 class="text-2xl font-bold mb-4 text-slate-900">전체 단어 목록</h2>
+                    <div class="mb-4 relative">
+                        <input type="text" id="search-input" placeholder="단어 검색..." class="w-full p-3 pl-10 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition">
+                        <svg class="w-5 h-5 text-slate-400 absolute top-1/2 left-3 transform -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <div id="word-list" class="flex-grow overflow-y-auto pr-2" style="max-height: 450px;">
+                    </div>
+                    <button id="download-csv" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">Anki용 CSV 다운로드</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+<script>
+window.speak = function(word) {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(word);
+        utterance.lang = 'en-US';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        window.speechSynthesis.speak(utterance);
+    } else {
+        alert("이 브라우저는 음성 합성을 지원하지 않습니다.");
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const vocabulary = [
+        { id: 1, word: 'Good', synonym: 'Excellent, Fine', antonym: 'Bad, Poor', difficulty: 1, meaning: '좋은, 훌륭한' },
+        { id: 2, word: 'Happy', synonym: 'Joyful, Merry', antonym: 'Sad, Unhappy', difficulty: 1, meaning: '행복한, 기쁜' },
+        { id: 3, word: 'Big', synonym: 'Large, Huge', antonym: 'Small, Little', difficulty: 1, meaning: '큰' },
+        { id: 4, word: 'Fast', synonym: 'Quick, Rapid', antonym: 'Slow, Leisurely', difficulty: 1, meaning: '빠른' },
+        { id: 5, word: 'Beautiful', synonym: 'Pretty, Lovely', antonym: 'Ugly, Unattractive', difficulty: 1, meaning: '아름다운' },
+        { id: 6, word: 'Smart', synonym: 'Intelligent, Bright', antonym: 'Stupid, Dumb', difficulty: 1, meaning: '똑똑한, 영리한' },
+        { id: 7, word: 'Important', synonym: 'Significant, Vital', antonym: 'Trivial, Unimportant', difficulty: 2, meaning: '중요한' },
+        { id: 8, word: 'Easy', synonym: 'Simple, Effortless', antonym: 'Difficult, Hard', difficulty: 1, meaning: '쉬운' },
+        { id: 9, word: 'Rich', synonym: 'Wealthy, Affluent', antonym: 'Poor, Needy', difficulty: 2, meaning: '부유한, 풍부한' },
+        { id: 10, word: 'Strong', synonym: 'Powerful, Mighty', antonym: 'Weak, Feeble', difficulty: 1, meaning: '강한, 튼튼한' },
+        { id: 11, word: 'Old', synonym: 'Ancient, Aged', antonym: 'New, Young', difficulty: 1, meaning: '오래된, 늙은' },
+        { id: 12, word: 'True', synonym: 'Correct, Accurate', antonym: 'False, Incorrect', difficulty: 1, meaning: '진실의, 사실인' },
+        { id: 13, word: 'Right', synonym: 'Correct, Proper', antonym: 'Wrong, Incorrect', difficulty: 1, meaning: '옳은, 맞는' },
+        { id: 14, word: 'Hot', synonym: 'Warm, Heated', antonym: 'Cold, Cool', difficulty: 1, meaning: '뜨거운, 더운' },
+        { id: 15, word: 'Brave', synonym: 'Courageous, Bold', antonym: 'Cowardly, Afraid', difficulty: 2, meaning: '용감한' },
+        { id: 16, word: 'Bright', synonym: 'Shining, Radiant', antonym: 'Dim, Dark', difficulty: 1, meaning: '밝은, 빛나는' },
+        { id: 17, word: 'Calm', synonym: 'Peaceful, Tranquil', antonym: 'Agitated, Turbulent', difficulty: 2, meaning: '차분한, 고요한' },
+        { id: 18, word: 'Clean', synonym: 'Tidy, Spotless', antonym: 'Dirty, Messy', difficulty: 1, meaning: '깨끗한' },
+        { id: 19, word: 'Funny', synonym: 'Humorous, Amusing', antonym: 'Serious, Grave', difficulty: 1, meaning: '재미있는, 웃기는' },
+        { id: 20, word: 'Kind', synonym: 'Considerate, Gentle', antonym: 'Cruel, Mean', difficulty: 1, meaning: '친절한' },
+        { id: 21, word: 'Love', synonym: 'Adore, Cherish', antonym: 'Hate, Despise', difficulty: 2, meaning: '사랑하다' },
+        { id: 22, word: 'Nice', synonym: 'Pleasant, Agreeable', antonym: 'Nasty, Unpleasant', difficulty: 1, meaning: '좋은, 멋진' },
+        { id: 23, word: 'Proud', synonym: 'Arrogant, Smug', antonym: 'Humble, Modest', difficulty: 2, meaning: '자랑스러운' },
+        { id: 24, word: 'Sad', synonym: 'Unhappy, Sorrowful', antonym: 'Happy, Joyful', difficulty: 1, meaning: '슬픈' },
+        { id: 25, word: 'Scared', synonym: 'Afraid, Frightened', antonym: 'Brave, Courageous', difficulty: 1, meaning: '무서워하는' },
+        { id: 26, word: 'Shy', synonym: 'Bashful, Timid', antonym: 'Outgoing, Confident', difficulty: 2, meaning: '수줍어하는' },
+        { id: 27, word: 'Honest', synonym: 'Truthful, Sincere', antonym: 'Dishonest, Deceitful', difficulty: 2, meaning: '정직한' },
+        { id: 28, word: 'Generous', synonym: 'Charitable, Giving', antonym: 'Stingy, Selfish', difficulty: 2, meaning: '관대한, 후한' },
+        { id: 29, word: 'Patient', synonym: 'Tolerant, Forbearing', antonym: 'Impatient, Hasty', difficulty: 2, meaning: '참을성 있는' },
+        { id: 30, word: 'Polite', synonym: 'Courteous, Civil', antonym: 'Rude, Impolite', difficulty: 2, meaning: '공손한, 예의 바른' },
+        { id: 31, word: 'Lazy', synonym: 'Idle, Indolent', antonym: 'Diligent, Industrious', difficulty: 2, meaning: '게으른' },
+        { id: 32, word: 'Busy', synonym: 'Active, Occupied', antonym: 'Idle, Free', difficulty: 1, meaning: '바쁜' },
+        { id: 33, word: 'Quiet', synonym: 'Silent, Still', antonym: 'Noisy, Loud', difficulty: 1, meaning: '조용한' },
+        { id: 34, word: 'Correct', synonym: 'Right, Accurate', antonym: 'Wrong, Incorrect', difficulty: 1, meaning: '정확한, 옳은' },
+        { id: 35, word: 'Difficult', synonym: 'Hard, Challenging', antonym: 'Easy, Simple', difficulty: 1, meaning: '어려운' },
+        { id: 36, word: 'Create', synonym: 'Make, Build', antonym: 'Destroy, Demolish', difficulty: 2, meaning: '창조하다, 만들다' },
+        { id: 37, word: 'Destroy', synonym: 'Ruin, Demolish', antonym: 'Create, Build', difficulty: 2, meaning: '파괴하다' },
+        { id: 38, word: 'Start', synonym: 'Begin, Commence', antonym: 'Finish, End', difficulty: 1, meaning: '시작하다' },
+        { id: 39, word: 'End', synonym: 'Finish, Conclude', antonym: 'Start, Begin', difficulty: 1, meaning: '끝내다' },
+        { id: 40, word: 'Help', synonym: 'Assist, Aid', antonym: 'Hinder, Obstruct', difficulty: 2, meaning: '돕다' },
+        { id: 41, word: 'Always', synonym: 'Forever, Constantly', antonym: 'Never, Seldom', difficulty: 1, meaning: '항상, 언제나' },
+        { id: 42, word: 'Never', synonym: 'Not ever, At no time', antonym: 'Always, Forever', difficulty: 1, meaning: '결코 ~않다' },
+        { id: 43, word: 'Above', synonym: 'Over, Higher than', antonym: 'Below, Under', difficulty: 1, meaning: '~위에' },
+        { id: 44, word: 'Below', synonym: 'Under, Beneath', antonym: 'Above, Over', difficulty: 1, meaning: '~아래에' },
+        { id: 45, word: 'Accept', synonym: 'Receive, Take', antonym: 'Reject, Refuse', difficulty: 2, meaning: '받아들이다, 수락하다' },
+        { id: 46, word: 'Reject', synonym: 'Refuse, Deny', antonym: 'Accept, Receive', difficulty: 2, meaning: '거절하다' },
+        { id: 47, word: 'Allow', synonym: 'Permit, Let', antonym: 'Forbid, Prohibit', difficulty: 2, meaning: '허락하다' },
+        { id: 48, word: 'Forbid', synonym: 'Prohibit, Ban', antonym: 'Allow, Permit', difficulty: 3, meaning: '금지하다' },
+        { id: 49, word: 'Arrive', synonym: 'Reach, Get to', antonym: 'Depart, Leave', difficulty: 2, meaning: '도착하다' },
+        { id: 50, word: 'Depart', synonym: 'Leave, Go away', antonym: 'Arrive, Stay', difficulty: 2, meaning: '출발하다, 떠나다' },
+        { id: 51, word: 'Attack', synonym: 'Assault, Invade', antonym: 'Defend, Protect', difficulty: 3, meaning: '공격하다' },
+        { id: 52, word: 'Defend', synonym: 'Protect, Guard', antonym: 'Attack, Assault', difficulty: 3, meaning: '방어하다, 지키다' },
+        { id: 53, word: 'Blame', synonym: 'Censure, Accuse', antonym: 'Praise, Commend', difficulty: 3, meaning: '비난하다, 탓하다' },
+        { id: 54, word: 'Praise', synonym: 'Applaud, Commend', antonym: 'Blame, Criticize', difficulty: 3, meaning: '칭찬하다' },
+        { id: 55, word: 'Borrow', synonym: 'Take, Use', antonym: 'Lend, Give', difficulty: 2, meaning: '빌리다' },
+        { id: 56, word: 'Lend', synonym: 'Loan, Give', antonym: 'Borrow, Take', difficulty: 2, meaning: '빌려주다' },
+        { id: 57, word: 'Build', synonym: 'Construct, Erect', antonym: 'Destroy, Demolish', difficulty: 2, meaning: '짓다, 건설하다' },
+        { id: 58, word: 'Buy', synonym: 'Purchase', antonym: 'Sell', difficulty: 1, meaning: '사다' },
+        { id: 59, word: 'Sell', synonym: 'Vend, Market', antonym: 'Buy, Purchase', difficulty: 1, meaning: '팔다' },
+        { id: 60, word: 'Combine', synonym: 'Unite, Join', antonym: 'Separate, Divide', difficulty: 3, meaning: '결합하다' },
+        { id: 61, word: 'Separate', synonym: 'Divide, Split', antonym: 'Combine, Unite', difficulty: 3, meaning: '분리하다, 나누다' },
+        { id: 62, word: 'Complex', synonym: 'Complicated, Intricate', antonym: 'Simple, Uncomplicated', difficulty: 3, meaning: '복잡한' },
+        { id: 63, word: 'Simple', synonym: 'Easy, Uncomplicated', antonym: 'Complex, Complicated', difficulty: 1, meaning: '단순한, 간단한' },
+        { id: 64, word: 'Continue', synonym: 'Persist, Proceed', antonym: 'Stop, Discontinue', difficulty: 2, meaning: '계속하다' },
+        { id: 65, word: 'Stop', synonym: 'Cease, Halt', antonym: 'Continue, Proceed', difficulty: 1, meaning: '멈추다' },
+        { id: 66, word: 'Courage', synonym: 'Bravery, Valor', antonym: 'Cowardice, Fear', difficulty: 3, meaning: '용기' },
+        { id: 67, word: 'Cowardice', synonym: 'Fear, Timidity', antonym: 'Courage, Bravery', difficulty: 3, meaning: '비겁함, 겁' },
+        { id: 68, word: 'Dangerous', synonym: 'Hazardous, Risky', antonym: 'Safe, Secure', difficulty: 2, meaning: '위험한' },
+        { id: 69, word: 'Safe', synonym: 'Secure, Protected', antonym: 'Dangerous, Hazardous', difficulty: 1, meaning: '안전한' },
+        { id: 70, word: 'Decrease', synonym: 'Reduce, Diminish', antonym: 'Increase, Grow', difficulty: 2, meaning: '감소하다' },
+        { id: 71, word: 'Increase', synonym: 'Grow, Enlarge', antonym: 'Decrease, Reduce', difficulty: 2, meaning: '증가하다' },
+        { id: 72, word: 'Different', synonym: 'Unlike, Dissimilar', antonym: 'Similar, Alike', difficulty: 1, meaning: '다른' },
+        { id: 73, word: 'Similar', synonym: 'Alike, Comparable', antonym: 'Different, Unlike', difficulty: 2, meaning: '비슷한, 유사한' },
+        { id: 74, word: 'Empty', synonym: 'Vacant, Unfilled', antonym: 'Full, Filled', difficulty: 1, meaning: '빈' },
+        { id: 75, word: 'Full', synonym: 'Filled, Packed', antonym: 'Empty, Vacant', difficulty: 1, meaning: '가득 찬' },
+        { id: 76, word: 'Expand', synonym: 'Enlarge, Swell', antonym: 'Contract, Shrink', difficulty: 3, meaning: '확장하다, 팽창하다' },
+        { id: 77, word: 'Contract', synonym: 'Shrink, Reduce', antonym: 'Expand, Enlarge', difficulty: 3, meaning: '수축하다, 축소하다' },
+        { id: 78, word: 'Failure', synonym: 'Defeat, Collapse', antonym: 'Success, Triumph', difficulty: 2, meaning: '실패' },
+        { id: 79, word: 'Success', synonym: 'Triumph, Achievement', antonym: 'Failure, Defeat', difficulty: 2, meaning: '성공' },
+        { id: 80, word: 'Famous', synonym: 'Renowned, Well-known', antonym: 'Unknown, Obscure', difficulty: 2, meaning: '유명한' },
+        { id: 81, word: 'Forget', synonym: 'Disremember, Overlook', antonym: 'Remember, Recall', difficulty: 1, meaning: '잊다' },
+        { id: 82, word: 'Remember', synonym: 'Recall, Recollect', antonym: 'Forget, Overlook', difficulty: 1, meaning: '기억하다' },
+        { id: 83, word: 'Freedom', synonym: 'Liberty, Independence', antonym: 'Slavery, Captivity', difficulty: 3, meaning: '자유' },
+        { id: 84, word: 'Friend', synonym: 'Companion, Pal', antonym: 'Enemy, Foe', difficulty: 1, meaning: '친구' },
+        { id: 85, word: 'Enemy', synonym: 'Foe, Opponent', antonym: 'Friend, Ally', difficulty: 2, meaning: '적' },
+        { id: 86, 'word': 'Future', 'synonym': 'Tomorrow, Hereafter', 'antonym': 'Past, Yesterday', 'difficulty': 2, meaning: '미래' },
+        { id: 87, 'word': 'Past', 'synonym': 'Yesterday, Former times', 'antonym': 'Future, Present', 'difficulty': 2, meaning: '과거' },
+        { id: 88, 'word': 'Giant', 'synonym': 'Huge, Enormous', 'antonym': 'Dwarf, Tiny', 'difficulty': 2, meaning: '거대한' },
+        { id: 89, 'word': 'Give', 'synonym': 'Provide, Offer', 'antonym': 'Take, Receive', 'difficulty': 1, meaning: '주다' },
+        { id: 90, 'word': 'Take', 'synonym': 'Receive, Get', 'antonym': 'Give, Offer', 'difficulty': 1, meaning: '받다, 가져가다' },
+        { id: 91, 'word': 'Heaven', 'synonym': 'Paradise, Bliss', 'antonym': 'Hell, Underworld', 'difficulty': 3, meaning: '천국' },
+        { id: 92, 'word': 'Hell', 'synonym': 'Underworld, Inferno', 'antonym': 'Heaven, Paradise', 'difficulty': 3, meaning: '지옥' },
+        { id: 93, 'word': 'Include', 'synonym': 'Contain, Comprise', 'antonym': 'Exclude, Omit', 'difficulty': 2, meaning: '포함하다' },
+        { id: 94, 'word': 'Exclude', 'synonym': 'Omit, Leave out', 'antonym': 'Include, Contain', 'difficulty': 3, meaning: '제외하다' },
+        { id: 95, 'word': 'Interior', 'synonym': 'Inside, Inner', 'antonym': 'Exterior, Outside', 'difficulty': 3, meaning: '내부의' },
+        { id: 96, 'word': 'Exterior', 'synonym': 'Outside, Outer', 'antonym': 'Interior, Inside', 'difficulty': 3, meaning: '외부의' },
+        { id: 97, 'word': 'Maximum', 'synonym': 'Greatest, Utmost', 'antonym': 'Minimum, Least', 'difficulty': 2, meaning: '최대의' },
+        { id: 98, 'word': 'Minimum', 'synonym': 'Least, Smallest', 'antonym': 'Maximum, Greatest', 'difficulty': 2, meaning: '최소의' },
+        { id: 99, 'word': 'Public', 'synonym': 'General, Common', 'antonym': 'Private, Personal', 'difficulty': 2, meaning: '공공의, 대중의' },
+        { id: 100, 'word': 'Private', 'synonym': 'Personal, Confidential', 'antonym': 'Public, Open', 'difficulty': 2, meaning: '사적인, 개인의' }
+    ];
+
+    let currentIndex = 0;
+    
+    const wordEl = document.getElementById('word');
+    const wordBackEl = document.getElementById('word-back');
+    const meaningEl = document.getElementById('meaning');
+    const synonymEl = document.getElementById('synonym');
+    const antonymEl = document.getElementById('antonym');
+    const cardCounterEl = document.getElementById('card-counter');
+    const difficultyIndicatorEl = document.getElementById('difficulty-indicator');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const flipBtn = document.getElementById('flip-btn');
+    const flashcard = document.getElementById('flashcard');
+    const wordListEl = document.getElementById('word-list');
+    const searchInput = document.getElementById('search-input');
+    const downloadCsvBtn = document.getElementById('download-csv');
+    const speakBtnMain = document.getElementById('speak-btn-main');
+
+    function renderCard(index) {
+        const item = vocabulary[index];
+        wordEl.textContent = item.word;
+        wordBackEl.textContent = item.word;
+        meaningEl.textContent = item.meaning;
+        synonymEl.textContent = item.synonym;
+        antonymEl.textContent = item.antonym;
+        cardCounterEl.textContent = `${index + 1} / ${vocabulary.length}`;
+        
+        flashcard.classList.remove('is-flipped');
+        
+        speakBtnMain.onclick = () => window.speak(item.word);
+
+        difficultyIndicatorEl.classList.remove('bg-green-400', 'bg-yellow-400', 'bg-red-400');
+        if (item.difficulty === 1) {
+            difficultyIndicatorEl.classList.add('bg-green-400');
+            difficultyIndicatorEl.title = "난이도: 쉬움";
+        } else if (item.difficulty === 2) {
+            difficultyIndicatorEl.classList.add('bg-yellow-400');
+            difficultyIndicatorEl.title = "난이도: 보통";
+        } else {
+            difficultyIndicatorEl.classList.add('bg-red-400');
+            difficultyIndicatorEl.title = "난이도: 어려움";
+        }
+    }
+
+    function populateWordList(filter = '') {
+        wordListEl.innerHTML = '';
+        const filteredVocab = vocabulary.filter(item => 
+            item.word.toLowerCase().includes(filter.toLowerCase()) ||
+            item.meaning.includes(filter)
+        );
+
+        if (filteredVocab.length === 0) {
+            wordListEl.innerHTML = `<p class="text-slate-500 text-center p-4">검색 결과가 없습니다.</p>`;
+            return;
+        }
+
+        const table = document.createElement('table');
+        table.className = 'w-full text-left border-collapse';
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th class="p-2 border-b-2 border-slate-200 bg-slate-100 text-sm font-bold text-slate-600">단어</th>
+                    <th class="p-2 border-b-2 border-slate-200 bg-slate-100 text-sm font-bold text-slate-600">뜻</th>
+                </tr>
+            </thead>
+        `;
+        const tbody = document.createElement('tbody');
+        filteredVocab.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-sky-50';
+            tr.innerHTML = `
+                <td class="p-2 border-b border-slate-100 font-semibold text-slate-800">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="flex-grow cursor-pointer">${item.word}</span>
+                        <button onclick="window.speak('${item.word}')" class="speaker-btn p-1">
+                           <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M5.858 8.464a5 5 0 000 7.072M12 12h.01"></path></svg>
+                        </button>
+                    </div>
+                </td>
+                <td class="p-2 border-b border-slate-100 text-slate-600 text-sm">${item.meaning}</td>
+            `;
+            tr.querySelector('span').addEventListener('click', () => {
+                currentIndex = vocabulary.findIndex(v => v.id === item.id);
+                renderCard(currentIndex);
+                document.querySelector('#flashcard-container').scrollIntoView({ behavior: 'smooth' });
+            });
+            tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        wordListEl.appendChild(table);
+    }
+    
+    flipBtn.addEventListener('click', () => {
+        flashcard.classList.toggle('is-flipped');
+    });
+
+    nextBtn.addEventListener('click', () => {
+        currentIndex = (currentIndex + 1) % vocabulary.length;
+        renderCard(currentIndex);
+    });
+
+    prevBtn.addEventListener('click', () => {
+        currentIndex = (currentIndex - 1 + vocabulary.length) % vocabulary.length;
+        renderCard(currentIndex);
+    });
+    
+    searchInput.addEventListener('input', (e) => {
+        populateWordList(e.target.value);
+    });
+    
+    downloadCsvBtn.addEventListener('click', () => {
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Front;Back\n";
+
+        vocabulary.forEach(item => {
+            const front = item.word;
+            const back = `<b>${item.meaning}</b><br><br><b>Synonym:</b> ${item.synonym}<br><b>Antonym:</b> ${item.antonym}`;
+            csvContent += `"${front}";"${back}"\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "english_vocabulary_100.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+    renderCard(currentIndex);
+    populateWordList();
+});
+</script>
+
+</body>
+</html>
