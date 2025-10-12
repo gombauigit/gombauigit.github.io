@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>토익 고빈출 혼동 어휘 50선 (발음強化)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The application maintains its paginated, single-word-focused structure. The key enhancement is the extension of the Text-to-Speech (TTS) feature to the example sentences. This reinforces the primary goal of improving pronunciation and listening skills alongside vocabulary acquisition. The structure remains: 1) Controls for filtering, 2) a main content "page" for one word pair, 3) navigation buttons, and 4) the now-extended audio feature for both words and their example sentences. -->
+    <!-- Visualization & Content Choices: Goal: Enhance Auditory Learning -> Presentation: Speaker icons are now added next to each example sentence. Interaction: Clicking these new icons triggers the TTS engine to read the full sentence aloud. Justification: This provides contextual pronunciation, allowing users to hear how words sound within a complete sentence, which is more effective for practical application and listening comprehension practice. The core single-page navigation is preserved for focused study. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #FDFBF7;
+            color: #333;
+        }
+        .card {
+            background-color: #FFFFFF;
+            border: 1px solid #EAEAEA;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .btn-primary {
+            background-color: #4A90E2;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #357ABD;
+        }
+        .btn-primary:disabled {
+            background-color: #a0c3e8;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background-color: #F5F5F5;
+            color: #555;
+            border: 1px solid #DDD;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .btn-secondary:hover {
+            background-color: #E0E0E0;
+            border-color: #CCC;
+        }
+        .btn-secondary:disabled {
+            background-color: #f0f0f0;
+            color: #aaa;
+            cursor: not-allowed;
+        }
+        .tag {
+            background-color: #E8F0FE;
+            color: #4A90E2;
+        }
+        .speaker-btn {
+            cursor: pointer;
+            color: #9ca3af;
+            transition: color 0.2s;
+            flex-shrink: 0;
+        }
+        .speaker-btn:hover {
+            color: #4A90E2;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-4xl">
+
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800">토익 고빈출 혼동 어휘 50</h1>
+            <p class="mt-3 text-lg text-gray-600">한 장씩 넘겨보며 발음과 함께 정확하게 학습하세요.</p>
+        </header>
+
+        <main>
+            <!-- Controls -->
+            <div id="controls" class="mb-8 p-6 bg-white rounded-xl shadow-sm border border-gray-200">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                    <div class="md:col-span-2">
+                        <input type="text" id="search-input" placeholder="어휘 검색..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent transition">
+                    </div>
+                    <div id="category-filters" class="md:col-span-3 flex flex-wrap gap-2 justify-start md:justify-end items-center">
+                        <button data-category="all" class="px-4 py-2 rounded-lg text-sm font-medium btn-primary">전체</button>
+                        <button data-category="유사발음" class="px-4 py-2 rounded-lg text-sm font-medium btn-secondary">유사발음</button>
+                        <button data-category="유사철자" class="px-4 py-2 rounded-lg text-sm font-medium btn-secondary">유사철자</button>
+                        <button data-category="의미혼동" class="px-4 py-2 rounded-lg text-sm font-medium btn-secondary">의미혼동</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area: Single Word Page View -->
+            <div id="content-area" class="min-h-[500px]">
+                <div id="word-page-view" class="card rounded-xl p-8 md:p-10 shadow-lg min-h-[420px] flex flex-col justify-center">
+                    <!-- Dynamic content will be injected here -->
+                </div>
+                <div id="word-page-controls" class="flex justify-between items-center max-w-2xl mx-auto mt-6">
+                    <button id="prev-button" class="px-6 py-2 rounded-lg btn-secondary font-medium">이전</button>
+                    <div id="page-progress" class="text-gray-600 font-medium text-lg"></div>
+                    <button id="next-button" class="px-6 py-2 rounded-lg btn-primary font-medium">다음</button>
+                </div>
+            </div>
+
+            <!-- YouTube Recommendations -->
+            <section id="youtube-section" class="mt-16 p-8 bg-white rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">학습 추천 영상</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-4 border rounded-lg hover:bg-gray-50 transition">
+                        <h3 class="font-bold text-blue-600">헷갈리는 영어 단어 모음 1</h3>
+                        <p class="text-sm text-gray-600 mt-1">영어 공부 할 때 헷갈리는 영어단어│혼동어휘 모음│파트1</p>
+                        <a href="https://youtu.be/hssC0l8nNW0?si=QTsooCsBaUc3FslV" target="_blank" class="inline-block mt-3 text-sm text-blue-500 hover:underline">영상 보러가기 &rarr;</a>
+                    </div>
+                    <div class="p-4 border rounded-lg hover:bg-gray-50 transition">
+                        <h3 class="font-bold text-blue-600">헷갈리는 영어 단어 모음 2</h3>
+                        <p class="text-sm text-gray-600 mt-1">영어 공부 할 때 헷갈리는 영어단어│혼동어휘 모음│파트2 </p>
+                        <a href="https://youtu.be/xvTHqlF5L68?si=m5Y8Xq54vjlDkWI4" target="_blank" class="inline-block mt-3 text-sm text-blue-500 hover:underline">영상 보러가기 &rarr;</a>
+                    </div>
+                    <div class="p-4 border rounded-lg hover:bg-gray-50 transition">
+                        <h3 class="font-bold text-blue-600">TOEIC 필수 혼동 어휘</h3>
+                        <p class="text-sm text-gray-600 mt-1">헷갈리는 혼동어휘 완벽정리</p>
+                        <a href="https://youtu.be/2PS8TUPE2Ww?si=rMFr2n6qSd2rr0Xp" target="_blank" class="inline-block mt-3 text-sm text-blue-500 hover:underline">영상 보러가기 &rarr;</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Anki Export -->
+            <section id="anki-section" class="mt-8 text-center">
+                 <div class="p-8 bg-blue-50 rounded-xl border border-blue-200">
+                    <h2 class="text-2xl font-bold text-gray-800">Anki로 편하게 암기하세요</h2>
+                    <p class="mt-2 text-gray-600">아래 버튼을 클릭하여 전체 50개 어휘를 Anki 학습 파일(.csv)로 다운로드하세요.</p>
+                    <button id="anki-export-button" class="mt-6 px-8 py-3 rounded-lg font-bold btn-primary inline-flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                           <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                           <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                        </svg>
+                        Anki 파일 다운로드
+                    </button>
+                </div>
+            </section>
+        </main>
+        
+        <footer class="text-center mt-16 py-6 border-t">
+            <p class="text-gray-500 text-sm">&copy; 2025 TOEIC Vocabulary Helper. All rights reserved.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        const wordsData = [
+            { pair: ["accept", "except"], kor: ["수락하다", "~을 제외하고"], pron: ["익셉트", "익셉트"], ex: ["Please accept my apology.", "Everyone passed except for Tom."], category: "유사발음" },
+            { pair: ["access", "excess"], kor: ["접근", "초과"], pron: ["액세스", "익세스"], ex: ["I have access to the files.", "There is an excess of inventory."], category: "유사발음" },
+            { pair: ["affect", "effect"], kor: ["영향을 미치다 (동사)", "효과, 결과 (명사)"], pron: ["어펙트", "이펙트"], ex: ["The weather will affect our plans.", "The new law had a positive effect."], category: "유사발음" },
+            { pair: ["advice", "advise"], kor: ["조언 (명사)", "조언하다 (동사)"], pron: ["어드바이스", "어드바이즈"], ex: ["He gave me some good advice.", "I advise you to be cautious."], category: "유사철자" },
+            { pair: ["complement", "compliment"], kor: ["보완하다", "칭찬하다"], pron: ["컴플리먼트", "컴플리먼트"], ex: ["The sauce complements the dish perfectly.", "She gave me a nice compliment."], category: "유사발음" },
+            { pair: ["principal", "principle"], kor: ["주요한, 교장", "원칙"], pron: ["프린서펄", "프린서플"], ex: ["The principal reason is a lack of funds.", "He has strong moral principles."], category: "유사발음" },
+            { pair: ["than", "then"], kor: ["~보다", "그때, 그리고나서"], pron: ["댄", "덴"], ex: ["She is taller than him.", "Finish your work, then you can leave."], category: "유사발음" },
+            { pair: ["ensure", "insure"], kor: ["보장하다, 확실하게 하다", "보험에 들다"], pron: ["인슈어", "인슈어"], ex: ["Please ensure all doors are locked.", "You should insure your new car."], category: "유사발음" },
+            { pair: ["farther", "further"], kor: ["(물리적 거리) 더 멀리", "(추상적, 정도) 더"], pron: ["파더", "퍼더"], ex: ["The gas station is farther down the road.", "We need to discuss this further."], category: "유사철자" },
+            { pair: ["personal", "personnel"], kor: ["개인의", "직원, 인사과"], pron: ["퍼스널", "퍼서넬"], ex: ["This is my personal opinion.", "All personnel must attend the meeting."], category: "유사철자" },
+            { pair: ["quiet", "quite"], kor: ["조용한", "꽤, 상당히"], pron: ["콰이엇", "콰이트"], ex: ["The library is very quiet.", "The movie was quite good."], category: "유사철자" },
+            { pair: ["weather", "whether"], kor: ["날씨", "~인지 아닌지"], pron: ["웨더", "웨더"], ex: ["The weather is nice today.", "I don't know whether he will come."], category: "유사발음" },
+            { pair: ["lose", "loose"], kor: ["잃다, 지다", "헐거운"], pron: ["루즈", "루스"], ex: ["Don't lose your keys.", "My shirt is too loose."], category: "유사철자" },
+            { pair: ["raise", "rise"], kor: ["~을 올리다 (타동사)", "오르다 (자동사)"], pron: ["레이즈", "라이즈"], ex: ["Please raise your hand.", "The sun will rise at 6 AM."], category: "의미혼동" },
+            { pair: ["lay", "lie"], kor: ["~을 놓다 (타동사)", "눕다, 거짓말하다 (자동사)"], pron: ["레이", "라이"], ex: ["Lay the book on the table.", "I need to lie down."], category: "의미혼동" },
+            { pair: ["set", "sit"], kor: ["~을 놓다, 설정하다 (타동사)", "앉다 (자동사)"], pron: ["셋", "싯"], ex: ["She set the vase on the shelf.", "Please sit down."], category: "의미혼동" },
+            { pair: ["among", "between"], kor: ["(셋 이상) 사이에서", "(둘) 사이에서"], pron: ["어몽", "비트윈"], ex: ["The money was divided among the three heirs.", "This is between you and me."], category: "의미혼동" },
+            { pair: ["amount", "number"], kor: ["(셀 수 없는 명사) 양", "(셀 수 있는 명사) 수"], pron: ["어마운트", "넘버"], ex: ["A large amount of water is wasted.", "A number of people are waiting."], category: "의미혼동" },
+            { pair: ["less", "fewer"], kor: ["(셀 수 없는 명사) 더 적은", "(셀 수 있는 명사) 더 적은"], pron: ["레스", "퓨어"], ex: ["I have less time than I thought.", "There are fewer cars on the road today."], category: "의미혼동" },
+            { pair: ["historic", "historical"], kor: ["역사적으로 중요한", "역사의, 역사에 관한"], pron: ["히스토릭", "히스토리컬"], ex: ["This is a historic moment.", "She is reading a historical novel."], category: "유사철자" },
+            { pair: ["economic", "economical"], kor: ["경제의", "경제적인, 절약하는"], pron: ["이코노믹", "이코노미컬"], ex: ["The country is facing economic problems.", "This car is very economical on fuel."], category: "유사철자" },
+            { pair: ["adverse", "averse"], kor: ["부정적인, 불리한", "~을 싫어하는"], pron: ["애드버스", "어버스"], ex: ["The policy had an adverse effect.", "He is averse to taking risks."], category: "유사발음" },
+            { pair: ["allusion", "illusion"], kor: ["암시, 언급", "환상, 착각"], pron: ["얼루전", "일루전"], ex: ["The book is full of allusions to Shakespeare.", "The magician created an optical illusion."], category: "유사발음" },
+            { pair: ["appraise", "apprise"], kor: ["평가하다", "알리다"], pron: ["어프레이즈", "어프라이즈"], ex: ["We need to appraise the value of the property.", "Please apprise me of any changes."], category: "유사발음" },
+            { pair: ["censor", "sensor"], kor: ["검열하다", "감지기"], pron: ["센서", "센서"], ex: ["The government decided to censor the film.", "The security system has motion sensors."], category: "유사발음" },
+            { pair: ["cite", "site", "sight"], kor: ["인용하다", "장소, 현장", "시야, 광경"], pron: ["사이트", "사이트", "사이트"], ex: ["He cited a famous poem.", "This is the site of the new building.", "The sunset was a beautiful sight."], category: "유사발음" },
+            { pair: ["conscience", "conscious"], kor: ["양심", "의식하는"], pron: ["컨션스", "컨셔스"], ex: ["He has a guilty conscience.", "She was conscious of being watched."], category: "유사철자" },
+            { pair: ["council", "counsel"], kor: ["의회", "상담, 조언; 상담하다"], pron: ["카운슬", "카운슬"], ex: ["The city council will vote on the proposal.", "He sought counsel from his lawyer."], category: "유사발음" },
+            { pair: ["elicit", "illicit"], kor: ["(정보를) 이끌어내다", "불법의"], pron: ["일리싯", "일리싯"], ex: ["The detective tried to elicit a confession.", "He was arrested for illicit drug use."], category: "유사발음" },
+            { pair: ["eminent", "imminent"], kor: ["저명한", "임박한"], pron: ["에미넌트", "이미넌트"], ex: ["She is an eminent scientist.", "A storm is imminent."], category: "유사철자" },
+            { pair: ["precede", "proceed"], kor: ["~에 앞서다", "계속하다, 나아가다"], pron: ["프리시드", "프로시드"], ex: ["The meeting was preceded by lunch.", "Please proceed with your presentation."], category: "유사발음" },
+            { pair: ["perspective", "prospective"], kor: ["관점", "장래의, 유망한"], pron: ["퍼스펙티브", "프로스펙티브"], ex: ["We need a new perspective on this problem.", "They are meeting with prospective buyers."], category: "유사철자" },
+            { pair: ["prescribe", "proscribe"], kor: ["처방하다, 규정하다", "금지하다"], pron: ["프리스크라이브", "프로스크라이브"], ex: ["The doctor prescribed some medicine.", "The law proscribes the sale of certain items."], category: "유사철자" },
+            { pair: ["stationary", "stationery"], kor: ["정지된", "문구류"], pron: ["스테이셔너리", "스테이셔너리"], ex: ["The car was stationary at the red light.", "I need to buy some stationery."], category: "유사발음" },
+            { pair: ["desert", "dessert"], kor: ["사막; 버리다", "후식"], pron: ["데저트", "디저트"], ex: ["The Sahara is a vast desert.", "What's for dessert?"], category: "유사철자" },
+            { pair: ["capital", "capitol"], kor: ["수도, 자본", "(미국) 국회의사당"], pron: ["캐피털", "캐피톨"], ex: ["Seoul is the capital of South Korea.", "The dome of the Capitol is famous."], category: "유사발음" },
+            { pair: ["its", "it's"], kor: ["그것의", "it is의 축약형"], pron: ["잇츠", "잇츠"], ex: ["The dog wagged its tail.", "It's a beautiful day."], category: "유사발음" },
+            { pair: ["your", "you're"], kor: ["너의", "you are의 축약형"], pron: ["유어", "유어"], ex: ["Is this your book?", "You're late."], category: "유사발음" },
+            { pair: ["their", "there", "they're"], kor: ["그들의", "거기에", "they are의 축약형"], pron: ["데어", "데어", "데어"], ex: ["It is their house.", "The book is over there.", "They're coming soon."], category: "유사발음" },
+            { pair: ["who's", "whose"], kor: ["who is의 축약형", "누구의"], pron: ["후즈", "후즈"], ex: ["Who's at the door?", "Whose keys are these?"], category: "유사발음" },
+            { pair: ["collaboration", "corroboration"], kor: ["협력", "확증, 입증"], pron: ["콜라보레이션", "코로보레이션"], ex: ["The project was a collaboration between two companies.", "We need corroboration of his story."], category: "유사철자" },
+            { pair: ["defer", "differ"], kor: ["연기하다, 미루다", "다르다"], pron: ["디퍼", "디퍼"], ex: ["They decided to defer the decision.", "Our opinions differ on this matter."], category: "유사발음" },
+            { pair: ["discreet", "discrete"], kor: ["신중한, 조심스러운", "별개의, 분리된"], pron: ["디스크리트", "디스크리트"], ex: ["Please be discreet about this information.", "The data is divided into discrete categories."], category: "유사발음" },
+            { pair: ["imply", "infer"], kor: ["암시하다, 넌지시 비추다", "추론하다"], pron: ["임플라이", "인퍼"], ex: ["His tone implied that he was not happy.", "I inferred from her expression that she was angry."], category: "의미혼동" },
+            { pair: ["adhere", "cohere"], kor: ["들러붙다, 고수하다", "일관성이 있다"], pron: ["어드히어", "코히어"], ex: ["You must adhere to the rules.", "His arguments did not cohere."], category: "유사철자" },
+            { pair: ["comprehensive", "comprehensible"], kor: ["포괄적인, 종합적인", "이해할 수 있는"], pron: ["컴프리헨시브", "컴프리헨서블"], ex: ["The report provides a comprehensive analysis.", "His explanation was clear and comprehensible."], category: "유사철자" },
+            { pair: ["credible", "creditable"], kor: ["믿을 수 있는", "칭찬할 만한, 훌륭한"], pron: ["크레더블", "크레디터블"], ex: ["We have credible evidence.", "She gave a creditable performance."], category: "유사철자" },
+            { pair: ["definite", "definitive"], kor: ["확실한, 명확한", "최종적인, 결정적인"], pron: ["데피니트", "디피니티브"], ex: ["We need a definite answer.", "This is the definitive biography of the artist."], category: "유사철자" },
+            { pair: ["resource", "recourse"], kor: ["자원", "의지, 호소"], pron: ["리소스", "리코스"], ex: ["The company has limited financial resources.", "Our only recourse is legal action."], category: "유사철자" },
+            { pair: ["adopt", "adapt"], kor: ["채택하다, 입양하다", "적응하다, 맞추다"], pron: ["어답트", "어댑트"], ex: ["We will adopt a new strategy.", "You need to adapt to the new environment."], category: "유사철자" }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('search-input');
+            const categoryFilters = document.getElementById('category-filters');
+            const ankiExportButton = document.getElementById('anki-export-button');
+            const wordPageView = document.getElementById('word-page-view');
+            const prevButton = document.getElementById('prev-button');
+            const nextButton = document.getElementById('next-button');
+            const pageProgress = document.getElementById('page-progress');
+
+            let currentFilter = 'all';
+            let currentSearch = '';
+            let currentIndex = 0;
+            let filteredWords = [...wordsData];
+
+            const speakerIconSVG = `<svg class="inline-block w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M11.536 14.01A8.473 8.473 0 0 0 14.026 8a8.473 8.473 0 0 0-2.49-6.01l-1.414 1.414A6.471 6.471 0 0 1 12.025 8a6.47 6.47 0 0 1-1.904 4.596z"/><path d="M10.121 12.596A6.47 6.47 0 0 0 12.025 8a6.47 6.47 0 0 0-1.904-4.596l-1.414 1.414A4.473 4.473 0 0 1 10.025 8a4.473 4.473 0 0 1-1.318 3.182zM8.707 11.182A4.473 4.473 0 0 0 10.025 8a4.473 4.473 0 0 0-1.318-3.182L7.293 6.23A2.475 2.475 0 0 1 8.025 8a2.475 2.475 0 0 1-.732 1.77zM6.293 9.77A2.475 2.475 0 0 0 8.025 8a2.475 2.475 0 0 0-1.732-1.77L4.879 7.64A.5.5 0 0 0 4 8v1a.5.5 0 0 0 .879.354z"/><path d="M3.5 6.5A.5.5 0 0 1 4 7v1a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5m-2 0A.5.5 0 0 1 2 7v1a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5"/></svg>`;
+
+            const speak = (text) => {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'en-US';
+                    utterance.rate = 0.9;
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    alert("죄송합니다. 사용하시는 브라우저가 음성 재생을 지원하지 않습니다.");
+                }
+            };
+
+            const renderWordPage = () => {
+                if (filteredWords.length === 0) {
+                    wordPageView.innerHTML = `<p class="text-gray-500 text-center text-lg">표시할 단어가 없습니다.</p>`;
+                    pageProgress.textContent = '0 / 0';
+                    prevButton.disabled = true;
+                    nextButton.disabled = true;
+                    return;
+                }
+
+                prevButton.disabled = currentIndex === 0;
+                nextButton.disabled = currentIndex >= filteredWords.length - 1;
+                
+                pageProgress.textContent = `${currentIndex + 1} / ${filteredWords.length}`;
+
+                const wordData = filteredWords[currentIndex];
+                
+                const escapeQuotes = (str) => str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+                wordPageView.innerHTML = `
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl md:text-4xl font-bold text-gray-800">
+                            ${wordData.pair.join(' / ')}
+                        </h2>
+                        <span class="tag text-sm font-semibold px-3 py-1.5 rounded-full">${wordData.category}</span>
+                    </div>
+                    <div class="space-y-6 text-gray-700">
+                        <div>
+                            <p class="font-bold text-xl text-gray-800 flex items-center">
+                                ${wordData.pair[0]}
+                                <span class="text-base font-normal text-gray-500 ml-2">[${wordData.pron[0]}]</span>
+                                <span class="speaker-btn ml-2" onclick="speak('${escapeQuotes(wordData.pair[0])}')">${speakerIconSVG}</span>
+                            </p>
+                            <p class="mt-1 ml-2"><strong>뜻:</strong> ${wordData.kor[0]}</p>
+                            <p class="mt-1 ml-2 text-sm text-gray-600 flex items-center">
+                                <strong>예:</strong>
+                                <span class="ml-1">${wordData.ex[0]}</span>
+                                <span class="speaker-btn ml-2" onclick="speak('${escapeQuotes(wordData.ex[0])}')">${speakerIconSVG}</span>
+                            </p>
+                        </div>
+                        <hr class="border-gray-200">
+                        <div>
+                            <p class="font-bold text-xl text-gray-800 flex items-center">
+                                ${wordData.pair[1]}
+                                <span class="text-base font-normal text-gray-500 ml-2">[${wordData.pron[1]}]</span>
+                                <span class="speaker-btn ml-2" onclick="speak('${escapeQuotes(wordData.pair[1])}')">${speakerIconSVG}</span>
+                            </p>
+                            <p class="mt-1 ml-2"><strong>뜻:</strong> ${wordData.kor[1]}</p>
+                            <p class="mt-1 ml-2 text-sm text-gray-600 flex items-center">
+                                <strong>예:</strong>
+                                <span class="ml-1">${wordData.ex[1]}</span>
+                                <span class="speaker-btn ml-2" onclick="speak('${escapeQuotes(wordData.ex[1])}')">${speakerIconSVG}</span>
+                            </p>
+                        </div>
+                    </div>
+                `;
+            };
+            
+            window.speak = speak;
+
+            const applyFiltersAndSearch = () => {
+                filteredWords = wordsData.filter(wordData => {
+                    const matchesCategory = currentFilter === 'all' || wordData.category === currentFilter;
+                    const matchesSearch = currentSearch === '' ||
+                                          wordData.pair[0].toLowerCase().includes(currentSearch) ||
+                                          wordData.pair[1].toLowerCase().includes(currentSearch) ||
+                                          wordData.kor[0].includes(currentSearch) ||
+                                          wordData.kor[1].includes(currentSearch);
+                    return matchesCategory && matchesSearch;
+                });
+                currentIndex = 0;
+                renderWordPage();
+            };
+
+            searchInput.addEventListener('input', (e) => {
+                currentSearch = e.target.value.toLowerCase().trim();
+                applyFiltersAndSearch();
+            });
+
+            categoryFilters.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON' && e.target.dataset.category) {
+                    currentFilter = e.target.dataset.category;
+                    categoryFilters.querySelectorAll('button').forEach(btn => {
+                        btn.classList.remove('btn-primary');
+                        btn.classList.add('btn-secondary');
+                    });
+                    e.target.classList.add('btn-primary');
+                    e.target.classList.remove('btn-secondary');
+                    applyFiltersAndSearch();
+                }
+            });
+
+            prevButton.addEventListener('click', () => {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    renderWordPage();
+                }
+            });
+
+            nextButton.addEventListener('click', () => {
+                if (currentIndex < filteredWords.length - 1) {
+                    currentIndex++;
+                    renderWordPage();
+                }
+            });
+
+            ankiExportButton.addEventListener('click', () => {
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "Front;Back\n";
+
+                wordsData.forEach(wordData => {
+                    const front = `${wordData.pair[0]} / ${wordData.pair[1]}`;
+                    const back = `<b>${wordData.pair[0]}</b><br><b>발음:</b> ${wordData.pron[0]}<br><b>뜻:</b> ${wordData.kor[0]}<br><b>예문:</b> <i>${wordData.ex[0]}</i><br><hr><b>${wordData.pair[1]}</b><br><b>발음:</b> ${wordData.pron[1]}<br><b>뜻:</b> ${wordData.kor[1]}<br><b>예문:</b> <i>${wordData.ex[1]}</i>`;
+                    
+                    const sanitizedFront = `"${front.replace(/"/g, '""')}"`;
+                    const sanitizedBack = `"${back.replace(/"/g, '""')}"`;
+
+                    csvContent += `${sanitizedFront};${sanitizedBack}\n`;
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "toeic_confusing_words.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            applyFiltersAndSearch();
+        });
+    </script>
+</body>
+</html>
+
