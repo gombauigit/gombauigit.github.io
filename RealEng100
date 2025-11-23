@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>실전 영어 회화 100선 (Audio)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony with Audio Cues -->
+    <!-- Application Structure Plan: Same dashboard structure as before. Added Web Speech API integration. Each card now has a dedicated button for TTS (Text-to-Speech). Event propagation is managed so clicking the audio button doesn't trigger the card expansion detail view. -->
+    <!-- Visualization & Content Choices: Added SVG speaker icons. Used CSS animation for 'playing' state. -->
+    <!-- CONFIRMATION: NO SVG graphics used (except inline UI icons). NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans KR', 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .sentence-card-details {
+            transition: all 0.3s ease-in-out;
+        }
+        /* Audio playing animation */
+        .speaking {
+            color: #2563EB; /* blue-600 */
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-700 mb-2">실전 영어 회화 100선 🔊</h1>
+            <p class="text-lg text-gray-600">스피커 아이콘을 눌러 발음을 듣고 따라 해보세요.</p>
+        </header>
+
+        <section id="dashboard" class="mb-8 p-6 bg-white rounded-xl shadow-md">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div class="flex flex-col space-y-4">
+                    <div>
+                        <h2 class="text-2xl font-semibold mb-3">학습 가이드</h2>
+                        <p class="text-gray-700 leading-relaxed text-sm md:text-base">
+                            이 대시보드는 100개의 실전 영어 회화 문장을 포함합니다. 
+                            <br>1. <strong>카테고리 버튼</strong>이나 <strong>차트</strong>를 클릭해 주제별로 학습하세요.
+                            <br>2. <strong>스피커 아이콘(🔊)</strong>을 클릭하면 원어민 발음을 들을 수 있습니다.
+                            <br>3. <strong>카드를 클릭</strong>하면 상세 상황과 활용 예문을 볼 수 있습니다.
+                        </p>
+                    </div>
+                    
+                    <div id="category-filters" class="flex flex-wrap gap-2">
+                        <button class="filter-btn active bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors" data-category="all">
+                            전체 (100)
+                        </button>
+                        <button class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium transition-colors hover:bg-gray-300" data-category="일상 대화">
+                            일상 (20)
+                        </button>
+                        <button class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium transition-colors hover:bg-gray-300" data-category="의견 표현 및 토론">
+                            의견 (20)
+                        </button>
+                        <button class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium transition-colors hover:bg-gray-300" data-category="직장 및 비즈니스">
+                            직장 (20)
+                        </button>
+                        <button class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium transition-colors hover:bg-gray-300" data-category="여행 및 길 묻기">
+                            여행 (10)
+                        </button>
+                        <button class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium transition-colors hover:bg-gray-300" data-category="부탁 및 제안">
+                            부탁 (10)
+                        </button>
+                        <button class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium transition-colors hover:bg-gray-300" data-category="감정 및 느낌 표현">
+                            감정 (10)
+                        </button>
+                        <button class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium transition-colors hover:bg-gray-300" data-category="관계 및 사회생활">
+                            관계 (10)
+                        </button>
+                    </div>
+                    
+                    <div>
+                        <input type="text" id="search-bar" placeholder="🔍 문장 검색 (예: favor, meeting...)" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow">
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="content">
+            <div class="mb-6 flex justify-between items-end">
+                <div>
+                    <h2 class="text-2xl font-semibold mb-2">학습 카드</h2>
+                    <p class="text-gray-600 text-sm">스피커 버튼을 눌러 발음을 확인하세요.</p>
+                </div>
+            </div>
+            <div id="sentence-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        const sentences = [
+            { id: 1, category: "일상 대화", sentence: "What have you been up to lately?", situation: "커피숍에서 몇 달 만에 우연히 만난 친구에게 근황을 물어볼 때.", examples: ["Hey, long time no see! What have you been up to lately?", "You look busy these days. What have you been up to?", "We haven't talked in ages. What have you been up to lately?"] },
+            { id: 2, category: "일상 대화", sentence: "I can't complain.", situation: "'How are you?'라는 질문에 '나쁘지 않아, 그럭저럭 잘 지내'라고 무난하게 대답할 때.", examples: ["A: How's business? B: Can't complain. We hit our targets.", "A: How's everything? B: Oh, you know, I can't complain. Life is good.", "I just got a small raise, so I can't complain."] },
+            { id: 3, category: "일상 대화", sentence: "Could you do me a favor?", situation: "동료에게 커피 한 잔을 사다 달라고 부탁하거나, 친구에게 차를 태워달라고 조심스럽게 물어볼 때.", examples: ["Could you do me a favor and watch my bag for a minute?", "I have a big presentation tomorrow. Could you do me a favor and look it over?", "Could you do me a huge favor? I need a ride to the airport."] },
+            { id: 4, category: "일상 대화", sentence: "I really appreciate it.", situation: "누군가 나를 위해 문을 잡아주거나, 복잡한 서류 작업을 도와주었을 때 진심으로 고마움을 표현할 때.", examples: ["Thanks for helping me move. I really appreciate it.", "You didn't have to buy me lunch, but I really appreciate it.", "I know you're busy, so I really appreciate you making the time."] },
+            { id: 5, category: "일상 대화", sentence: "Don't mention it.", situation: "'Thank you'라는 말에 '천만에요', '별말씀을요'라고 쿨하게 대답할 때.", examples: ["A: Thanks for the ride! B: Don't mention it. It was on my way.", "A: You saved my life! B: Don't mention it. Happy to help.", "A: I appreciate your advice. B: Don't mention it. Any time."] },
+            { id: 6, category: "일상 대화", sentence: "What do you do for a living?", situation: "파티나 모임에서 처음 만난 사람과 대화하며 직업을 정중하게 물어볼 때.", examples: ["So, you live in New York? What do you do for a living?", "That's an interesting story. If you don't mind me asking, what do you do for a living?", "My brother is a graphic designer. What do you do for a living?"] },
+            { id: 7, category: "일상 대화", sentence: "I'm just browsing.", situation: "옷 가게에 들어갔는데 점원이 'May I help you?'라고 물어볼 때 '그냥 둘러보는 거예요'라고 말할 때.", examples: ["A: Are you looking for anything in particular? B: No thanks, I'm just browsing.", "I'm just browsing right now, but I'll let you know if I need help.", "We're just browsing to see what's new this season."] },
+            { id: 8, category: "일상 대화", sentence: "I'll take it.", situation: "여러 신발을 신어본 후, 마음에 드는 하나를 골라 점원에게 '이걸로 할게요'라고 말할 때.", examples: ["This jacket fits perfectly. I'll take it.", "A: Would you like the blue one or the red one? B: I'll take the blue one.", "I've been looking for this book everywhere! I'll take it."] },
+            { id: 9, category: "일상 대화", sentence: "Do you have the time?", situation: "핸드폰이 없어서 버스 정류장에서 옆 사람에게 지금 몇 시인지 물어볼 때.", examples: ["Excuse me, do you have the time? I think my watch is slow.", "A: Do you have the time? B: Sure, it's almost 3:15.", "I have a meeting soon. Do you have the time by any chance?"] },
+            { id: 10, category: "일상 대화", sentence: "I'm running late.", situation: "아침에 차가 너무 막혀서 약속 장소에 있는 친구에게 '나 늦고 있어'라고 문자를 보낼 때.", examples: ["I'm stuck in traffic. I'm running about 15 minutes late.", "Can we start the meeting without me? I'm running late.", "I missed the bus, so I'm running late for class."] },
+            { id: 11, category: "일상 대화", sentence: "What's the weather like?", situation: "창문이 없는 사무실에서 밖에 있는 동료에게 '날씨 어때?'라고 물어볼 때.", examples: ["What's the weather like in Seoul right now?", "I'm packing for my trip. What's the weather like there?", "A: Should I bring a jacket? B: I don't know, what's the weather like?"] },
+            { id: 12, category: "일상 대화", sentence: "It's pouring outside.", situation: "갑자기 비가 억수같이 쏟아져 내리는 것을 보고 '밖에 비 엄청 온다'라고 말할 때.", examples: ["We should cancel the picnic. It's pouring outside.", "I'm completely soaked! It's pouring out there.", "Don't forget your umbrella, it's pouring."] },
+            { id: 13, category: "일상 대화", sentence: "I'm starving.", situation: "점심시간이 한참 지나서 '배고파 죽겠어'라고 느낄 때.", examples: ["I skipped breakfast. I'm starving!", "When is dinner? I'm starving.", "Let's order pizza. I'm starving."] },
+            { id: 14, category: "일상 대화", sentence: "Let's grab a bite.", situation: "일이 끝난 후 동료에게 '간단히 뭐 좀 먹자'고 제안할 때.", examples: ["I'm hungry. Want to grab a bite after work?", "We have an hour before the movie. Let's grab a quick bite.", "Let's grab a bite at that new taco place."] },
+            { id: 15, category: "일상 대화", sentence: "It's on me.", situation: "친구와 식사를 마친 후 계산대에서 '이번엔 내가 낼게'라고 말할 때.", examples: ["You paid last time. This one's on me.", "Don't worry about the bill, it's on me.", "A: How much do I owe you? B: Nothing, it's on me."] },
+            { id: 16, category: "일상 대화", sentence: "Let's split the bill.", situation: "여러 명의 친구들과 식사한 후, '각자 나눠서 내자' (더치페이하자)고 제안할 때.", examples: ["It's probably easiest if we just split the bill.", "A: I'll get this. B: No, let's split the bill.", "We all ordered different things, so let's not split the bill evenly."] },
+            { id: 17, category: "일상 대화", sentence: "How's it going?", situation: "복도에서 마주친 직장 동료나 안면이 있는 이웃에게 가볍게 인사를 건넬 때.", examples: ["A: Hey, Sarah. How's it going? B: Pretty good, thanks. How about you?", "How's it going? I haven't seen you in a while.", "A: How's it going? B: Not bad, just busy with work."] },
+            { id: 18, category: "일상 대화", sentence: "Long time no see!", situation: "길거리에서 몇 년 만에 고등학교 동창을 우연히 만났을 때.", examples: ["Wow, John? Long time no see! How have you been?", "A: Is that you, Maria? B: Yes! Long time no see!", "It's been at least five years. Long time no see!"] },
+            { id: 19, category: "일상 대화", sentence: "I'll take your word for it.", situation: "친구가 '이 식당 정말 맛있어'라고 강력 추천할 때, '네 말을 믿어볼게'라고 말할 때.", examples: ["A: This is the best cake you'll ever have. B: Okay, I'll take your word for it.", "I haven't seen the movie, but if you say it's good, I'll take your word for it.", "I don't know much about cars, so I'll have to take your word for it."] },
+            { id: 20, category: "일상 대화", sentence: "What are you in the mood for?", situation: "저녁 메뉴를 정할 때, 친구나 파트너에게 '뭐 먹고 싶어?'라고 물어볼 때.", examples: ["We can get Italian or Mexican. What are you in the mood for?", "A: What are you in the mood for? B: I'm craving some spicy food.", "It's your birthday. What are you in the mood for dinner?"] },
+            { id: 21, category: "의견 표현 및 토론", sentence: "What do you think about...?", situation: "새로운 프로젝트 아이디어에 대해 팀원들의 의견을 물어볼 때.", examples: ["What do you think about the new marketing plan?", "I'm thinking of painting the room blue. What do you think about that?", "What do you think about working from home permanently?"] },
+            { id: 22, category: "의견 표현 및 토론", sentence: "If you ask me, ...", situation: "'내 생각엔...'이라며 자신의 의견을 조심스럽게, 하지만 분명하게 밝힐 때.", examples: ["If you ask me, we should have left an hour ago.", "It's a nice car, but if you ask me, it's overpriced.", "If you ask me, she's the best candidate for the job."] },
+            { id: 23, category: "의견 표현 및 토론", sentence: "To be honest, ...", situation: "친구가 새로 산 옷에 대해 물어볼 때, '솔직히 말해서, 네 스타일은 아닌 것 같아'라고 말할 때.", examples: ["To be honest, I'm not a big fan of horror movies.", "A: Did you like the presentation? B: To be honest, I found it a bit boring.", "To be honest, I completely forgot about the meeting."] },
+            { id: 24, category: "의견 표현 및 토론", sentence: "I see your point, but...", situation: "상대방의 의견을 존중하며 '무슨 말인진 알겠는데, 내 생각은 좀 달라'라고 반론을 제기할 때.", examples: ["I see your point, but I think we need to consider the budget.", "I see your point about saving money, but this is a necessary expense.", "A: We should launch now. B: I see your point, but the product isn't ready."] },
+            { id: 25, category: "의견 표현 및 토론", sentence: "I couldn't agree more.", situation: "상대방의 의견에 '완전 동감이야', '전적으로 동의해'라고 강하게 긍정할 때.", examples: ["A: This new coffee shop is fantastic. B: I couldn't agree more.", "You said we need more time? I couldn't agree more.", "A: It was a very difficult decision. B: I couldn't agree more."] },
+            { id: 26, category: "의견 표현 및 토론", sentence: "I beg to differ.", situation: "회의에서 누군가의 의견에 정중하지만 단호하게 '난 의견이 좀 달라'라고 말할 때.", examples: ["You said this is the best solution, but I beg to differ.", "A: That movie was a masterpiece. B: I beg to differ. I thought it was slow.", "With all due respect, I beg to differ on that point."] },
+            { id: 27, category: "의견 표현 및 토론", sentence: "That's a valid point.", situation: "토론 중에 상대방이 '일리가 있는' 주장을 했을 때, 이를 인정하며 '그 말도 일리가 있네요'라고 말할 때.", examples: ["A: We should consider the long-term effects. B: That's a valid point.", "I hadn't thought of it that way. That's a valid point.", "That's a valid point, but I still think my plan is better."] },
+            { id: 28, category: "의견 표현 및 토론", sentence: "Let's agree to disagree.", situation: "정치나 종교처럼 민감한 주제로 논쟁하다가, 더 이상 합의점을 찾기 어려울 때 '서로 생각이 다른 걸로 하자'고 제안할 때.", examples: ["We're clearly not going to convince each other. Let's just agree to disagree.", "I don't think we'll ever see eye to eye on this, so let's agree to disagree.", "A: This is going nowhere. B: You're right. Let's agree to disagree."] },
+            { id: 29, category: "의견 표현 및 토론", sentence: "What's your take on this?", situation: "어떤 문제에 대해 '네 견해는 어때?'라고 격식 없이(What do you think보다) 물어볼 때.", examples: ["We have two options. What's your take on this, Sarah?", "That's my opinion. What's your take on this?", "A: This is a complicated issue. B: I agree. What's your take on this?"] },
+            { id: 30, category: "의견 표현 및 토론", sentence: "I'm on the fence about it.", situation: "이직 제의를 받았지만, 현재 직장도 나쁘지 않아서 '결정을 못 내렸어', '고민 중이야'라고 말할 때.", examples: ["A: Are you going to buy the new phone? B: I don't know, I'm on the fence about it.", "I'm on the fence about whether to move to a new city.", "She's still on the fence about accepting the job offer."] },
+            { id: 31, category: "의견 표현 및 토론", sentence: "Could you elaborate on that?", situation: "상대방이 한 말을 좀 더 구체적으로 설명해달라고 '그 점에 대해 좀 더 자세히 말해줄래?'라고 요청할 때.", examples: ["You said the plan is 'risky.' Could you elaborate on that?", "That's an interesting idea. Could you elaborate on that a bit?", "I'm not sure I follow. Could you elaborate on your point?"] },
+            { id: 32, category: "의견 표현 및 토론", sentence: "In my humble opinion, ...", situation: "자신의 의견을 말하기 전에 '제 미천한 소견으로는...', '제 생각엔...'이라며 겸손하게 운을 뗄 때.", examples: ["In my humble opinion, this design is too cluttered.", "This is, in my humble opinion, the best restaurant in town.", "In my humble opinion, we should focus on quality, not quantity."] },
+            { id: 33, category: "의견 표현 및 토론", sentence: "I'm not so sure about that.", situation: "상대방의 주장에 대해 '그건 좀 아닌 것 같은데', '글쎄...'라며 완곡하게 의문을 제기할 때.", examples: ["A: This will solve all our problems. B: I'm not so sure about that.", "He says he can finish it by tomorrow, but I'm not so sure about that.", "A: It's a great investment. B: I'm not so sure about that."] },
+            { id: 34, category: "의견 표현 및 토론", sentence: "You took the words right out of my mouth.", situation: "내가 하려던 말을 친구가 정확히 똑같이 먼저 했을 때 '내 말이 그 말이야!'라고 맞장구칠 때.", examples: ["A: I think we need a vacation. B: You took the words right out of my mouth!", "I was just about to say that. You took the words right out of my mouth.", "A: This soup is amazing! B: You took the words right out of my mouth."] },
+            { id: 35, category: "의견 표현 및 토론", sentence: "That's out of the question.", situation: "'주말에 출근하라고?'처럼 말도 안 되는 부탁이나 제안을 들었을 때 '그건 절대 안 돼'라고 단호하게 거절할 때.", examples: ["You want to borrow my new car? That's out of the question.", "A: Can we postpone the deadline again? B: That's out of the question.", "Letting you go alone at night is out of the question."] },
+            { id: 36, category: "의견 표현 및 토론", sentence: "Let's get straight to the point.", situation: "회의에서 잡담이 길어질 때 '바로 본론으로 들어갑시다'라고 말하며 분위기를 전환할 때.", examples: ["We don't have much time, so let's get straight to the point.", "I'll get straight to the point. We're over budget.", "Stop beating around the bush and get straight to the point."] },
+            { id: 37, category: "의견 표현 및 토론", sentence: "I'm torn between A and B.", situation: "휴가 때 바다로 갈지(A) 산으로 갈지(B) 'A와 B 사이에서 고민 중이야'라고 말할 때.", examples: ["I'm torn between the red dress and the blue one.", "He's torn between staying in his hometown and moving to the city.", "I'm torn between taking the job and going back to school."] },
+            { id: 38, category: "의견 표현 및 토론", sentence: "It doesn't make sense.", situation: "앞뒤가 맞지 않는 변명을 듣거나, 도저히 이해할 수 없는 결정을 봤을 때 '말이 안 돼'라고 말할 때.", examples: ["Why would he quit his job now? It doesn't make sense.", "The instructions are so confusing. It doesn't make sense.", "Spending so much money on that? It just doesn't make sense."] },
+            { id: 39, category: "의견 표현 및 토론", sentence: "I second that.", situation: "회의에서 한 사람이 '점심으로 피자 먹어요'라고 제안하자 '나도 찬성이야!'라고 바로 동의할 때.", examples: ["A: I think we should take a break. B: I second that.", "A: Sarah would be perfect for this project. B: I'll second that.", "A: This is the best coffee in town. B: I second that."] },
+            { id: 40, category: "의견 표현 및 토론", sentence: "Let's look at the big picture.", situation: "사소한 디테일에 매몰되어 있을 때, '숲을 보자', '큰 그림을 보자'고 제안할 때.", examples: ["Don't worry about small mistakes. Let's look at the big picture.", "Looking at the big picture, our company is actually doing very well.", "We need to stop arguing and look at the big picture."] },
+            { id: 41, category: "직장 및 비즈니스", sentence: "I'm calling about...", situation: "다른 회사에 전화를 걸어 '저는... 건 때문에 전화 드렸습니다'라고 용건을 밝힐 때.", examples: ["Hi, this is Jane from ABC Corp. I'm calling about the invoice you sent.", "I'm calling about the job opening I saw online.", "I'm calling about the appointment I scheduled for next Tuesday."] },
+            { id: 42, category: "직장 및 비즈니스", sentence: "Could I speak to [Name]?", situation: "전화해서 담당자인 [이름]과 통화할 수 있는지 정중하게 물어볼 때.", examples: ["Hello, could I speak to Mr. Johnson in the sales department?", "Hi, is this tech support? Could I speak to someone about my computer?", "Could I speak to whoever is in charge of marketing?"] },
+            { id: 43, category: "직장 및 비즈니스", sentence: "He's not available at the moment.", situation: "전화를 받았는데 찾는 사람이 회의 중이거나 외출 중일 때 '지금 자리에 안 계신데요'라고 말할 때.", examples: ["I'm sorry, Ms. Kim is not available at the moment.", "He's in a meeting and not available at the moment.", "A: Can I talk to Tom? B: He's not available at the moment. Can I take a message?"] },
+            { id: 44, category: "직장 및 비즈니스", sentence: "Could I leave a message?", situation: "통화하려던 사람이 부재중이라 '메시지 좀 남겨도 될까요?'라고 말할 때.", examples: ["A: He's not in. B: Okay, could I leave a message?", "Could I leave a message for him to call me back?", "Since she's busy, could I just leave a message?"] },
+            { id: 45, category: "직장 및 비즈니스", sentence: "I'll get back to you on that.", situation: "상사나 고객이 지금 당장 대답하기 어려운 질문을 했을 때, '알아보고 다시 연락드리겠습니다'라고 말할 때.", examples: ["That's a good question. I'll get back to you on that.", "I don't have the figures right now, but I'll get back to you on that this afternoon.", "A: Can we get a discount? B: Let me check. I'll get back to you on that."] },
+            { id: 46, category: "직장 및 비즈니스", sentence: "Let's set up a meeting.", situation: "이메일로만 논의하기엔 복잡한 안건이라 '회의 일정을 잡읍시다'라고 제안할 때.", examples: ["This is too complex to discuss over email. Let's set up a meeting.", "Let's set up a meeting for next week to go over the details.", "Can we set up a meeting with the design team?"] },
+            { id: 47, category: "직장 및 비즈니스", sentence: "What's the agenda for the meeting?", situation: "회의 초대를 받고, '회의 안건이 무엇인가요?'라고 물어볼 때.", examples: ["I see a meeting on my calendar. What's the agenda for the meeting?", "Could you send me the agenda for the meeting beforehand?", "Before we start, let's quickly review the agenda for the meeting."] },
+            { id: 48, category: "직장 및 비즈니스", sentence: "I'm swamped with work.", situation: "동료가 커피 한잔하자고 하지만, '나 지금 일이 너무 많아'라고 말하며 거절할 때.", examples: ["I can't join you for lunch. I'm swamped with work.", "This has been a crazy week. I'm completely swamped.", "A: Can you help me? B: Sorry, I'm swamped right now."] },
+            { id: 49, category: "직장 및 비즈니스", sentence: "He's been promoted.", situation: "동료의 승진 소식을 다른 팀원에게 '그가 승진했어요'라고 전할 때.", examples: ["Did you hear? John has been promoted to Senior Manager.", "She worked so hard for this. I'm glad she's been promoted.", "Congratulations on being promoted!"] },
+            { id: 50, category: "직장 및 비즈니스", sentence: "I need to meet the deadline.", situation: "금요일 오후 5시가 마감인 보고서를 붙들고 '마감 기한을 맞춰야 해'라고 다짐할 때.", examples: ["I have to work late tonight. I need to meet the deadline.", "We are working hard to meet the deadline for this project.", "Can you help me? I'm struggling to meet the deadline."] },
+            { id: 51, category: "직장 및 비즈니스", sentence: "Let's touch base next week.", situation: "회의를 마치면서 '다음 주에 (진행 상황에 대해) 잠깐 얘기 나누죠'라고 말할 때.", examples: ["I'm busy this week, but let's touch base next week.", "Let's touch base on Monday morning to see how things are going.", "I'll send you the draft now. Let's touch base after you've reviewed it."] },
+            { id: 52, category: "직장 및 비즈니스", sentence: "Keep me posted.", situation: "부하 직원에게 일을 맡기고 '진행 상황 계속 알려줘'라고 말할 때.", examples: ["I need to know what happens. Keep me posted.", "This is an important issue, so please keep me posted.", "Keep me posted on any updates from the client."] },
+            { id: 53, category: "직장 및 비즈니스", sentence: "I'm working on it.", situation: "상사가 '그 보고서 어떻게 됐어?'라고 물어볼 때 '지금 하고 있습니다'라고 대답할 때.", examples: ["A: Have you fixed the bug? B: Not yet, but I'm working on it.", "A: Where is the report? B: I'm working on it. It'll be ready by 5 PM.", "Don't worry, I'm working on finding a solution."] },
+            { id: 54, category: "직장 및 비즈니스", sentence: "We need to cut costs.", situation: "회사 실적이 좋지 않아, 임원 회의에서 '비용을 절감해야 합니다'라고 말할 때.", examples: ["Our expenses are too high. We need to cut costs.", "The company is looking for ways to cut costs without laying off staff.", "We need to cut costs on office supplies."] },
+            { id: 55, category: "직장 및 비즈니스", sentence: "What's our target audience?", situation: "신제품 마케팅 회의에서 '우리의 타겟 고객은 누구죠?'라고 질문할 때.", examples: ["Before we design the ad, we need to know what's our target audience.", "Is this product for teenagers, or is our target audience older?", "Let's refine our understanding of our target audience."] },
+            { id: 56, category: "직장 및 비즈니스", sentence: "Let's brainstorm some ideas.", situation: "막힌 문제에 대해 '자유롭게 아이디어 좀 내보죠'라고 팀원들에게 제안할 때.", examples: ["We need a new name for the product. Let's brainstorm some ideas.", "Let's get everyone together and brainstorm some ideas for the party.", "Okay, no bad ideas. Let's just brainstorm."] },
+            { id: 57, category: "직장 및 비즈니스", sentence: "I'm afraid I have to pull an all-nighter.", situation: "마감이 임박했는데 일이 절반도 끝나지 않아, '오늘 밤샘 작업해야 할 것 같아'라고 체념하듯 말할 때.", examples: ["This report is due tomorrow morning. I'm afraid I have to pull an all-nighter.", "I pulled an all-nighter to study for the final exam.", "We had to pull an all-nighter to get the project done."] },
+            { id: 58, category: "직장 및 비즈니스", sentence: "The project is on track.", situation: "주간 보고 회의에서 '프로젝트가 순조롭게 (계획대로) 진행 중입니다'라고 보고할 때.", examples: ["Don't worry, everything is under control. The project is on track.", "We're happy to report that the project is on track to be completed by June.", "A: How's the new building? B: The project is on track."] },
+            { id: 59, category: "직장 및 비즈니스", sentence: "We're falling behind schedule.", situation: "예상치 못한 변수로 인해 '일정이 늦어지고 있습니다'라고 위기감을 갖고 말할 때.", examples: ["We've had too many delays. We're falling behind schedule.", "If we don't work faster, we're going to fall behind schedule.", "The team is falling behind schedule due to a technical issue."] },
+            { id: 60, category: "직장 및 비즈니스", sentence: "Could you cover for me?", situation: "아이가 아파서 급히 퇴근해야 할 때, 동료에게 '내 대신 일 좀 봐줄 수 있어?'라고 부탁할 때.", examples: ["I have a dentist appointment at 3. Could you cover for me?", "A: Could you cover for me while I'm on vacation? B: Sure, no problem.", "Thanks for covering for me yesterday. I owe you one."] },
+            { id: 61, category: "여행 및 길 묻기", sentence: "How do I get to [Place]?", situation: "낯선 도시의 지하철역에서 행인에게 '[장소]에 어떻게 가나요?'라고 물어볼 때.", examples: ["Excuse me, how do I get to the nearest subway station?", "How do I get to the Eiffel Tower from here?", "Can you tell me how I get to the post office?"] },
+            { id: 62, category: "여행 및 길 묻기", sentence: "Is it far from here?", situation: "지도를 보며 목적지를 찾았지만, '여기서 먼가요?'라고 거리를 물어볼 때.", examples: ["A: The museum is on 5th Avenue. B: Is it far from here?", "I'm thinking of walking. Is it far from here?", "A: How do I get to the park? B: It's about 10 minutes. A: Is it far?"] },
+            { id: 63, category: "여행 및 길 묻기", sentence: "It's just around the corner.", situation: "길을 묻는 관광객에게 '바로 요 모퉁이 돌면 있어요'라고 가깝다는 것을 알려줄 때.", examples: ["A: Where's the coffee shop? B: It's just around the corner.", "Don't worry, the bus stop is just around the corner.", "The pharmacy? It's just around the corner, next to the bank."] },
+            { id: 64, category: "여행 및 길 묻기", sentence: "I'd like to check in.", situation: "호텔 프런트 데스크에 도착해서 '체크인하고 싶습니다'라고 말할 때.", examples: ["Hi, I'd like to check in. I have a reservation under the name 'Smith'.", "We're a bit early, but we'd like to check in if possible.", "Hello, I'd like to check in for my flight to London."] },
+            { id: 65, category: "여행 및 길 묻기", sentence: "Do you have a reservation under [Name]?", situation: "인기 많은 식당 입구에서 직원이 '혹시 [이름]으로 예약하셨나요?'라고 물어볼 때.", examples: ["A: Hi, a table for two. B: Do you have a reservation under 'Kim'?", "Hello, do you have a reservation under the name 'Brown'?", "A: I'd like to check in. B: Certainly. Do you have a reservation under 'Lee'?"] },
+            { id: 66, category: "여행 및 길 묻기", sentence: "A table for two, please.", situation: "식당에 들어가서 직원에게 '두 명 자리 부탁합니다'라고 말할 때.", examples: ["Hi, a table for two, please. Preferably by the window.", "A: How many in your party? B: A table for two, please.", "We'd like a table for two, and we're ready to order."] },
+            { id: 67, category: "여행 및 길 묻기", sentence: "Could we see the menu, please?", situation: "식당 자리에 앉은 후, '메뉴판 좀 볼 수 있을까요?'라고 웨이터에게 요청할 때.", examples: ["Excuse me, could we see the menu, please?", "We're not ready to order yet. Could we see the menu, please?", "Could we see the dessert menu, please?"] },
+            { id: 68, category: "여행 및 길 묻기", sentence: "What do you recommend?", situation: "메뉴가 너무 많아서 결정하기 어려울 때, 웨이터에게 '뭘 추천하시나요?'라고 물어볼 때.", examples: ["This is my first time here. What do you recommend?", "Everything looks delicious. What's the most popular dish you recommend?", "A: Are you ready to order? B: Not quite. What do you recommend?"] },
+            { id: 69, category: "여행 및 길 묻기", sentence: "I'm allergic to nuts.", situation: "음식을 주문하기 전에, '저 견과류 알레르기가 있어요'라고 직원에게 미리 알릴 때.", examples: ["Does this dish contain any nuts? I'm allergic to nuts.", "Please be careful, my son is severely allergic to nuts.", "I'm allergic to nuts, so could you make it without peanuts?"] },
+            { id: 70, category: "여행 및 길 묻기", sentence: "Could I have the check, please?", situation: "식사를 다 마친 후, 웨이터를 불러 '계산서 좀 주시겠어요?'라고 말할 때.", examples: ["Excuse me, we're finished. Could I have the check, please?", "We're in a hurry. Could I have the check, please?", "A: Anything else? B: No, that's all. Could I have the check, please?"] },
+            { id: 71, category: "부탁 및 제안", sentence: "Would you mind helping me with this?", situation: "무거운 짐을 옮기다가 '이것 좀 도와주실 수 있나요?'라고 정중하게 부탁할 때. (대답은 'No, not at all.'이 긍정)", examples: ["This box is too heavy. Would you mind helping me with this?", "I don't understand this form. Would you mind helping me with this?", "A: Would you mind helping me? B: No, not at all. What do you need?"] },
+            { id: 72, category: "부탁 및 제안", sentence: "I was wondering if you could...", situation: "상사에게 '혹시... 휴가 좀 써도 될까요?'라고 매우 조심스럽게 부탁할 때.", examples: ["I was wondering if you could lend me some money.", "I was wondering if you could give me a ride home.", "I was wondering if you could look over my report before I submit it."] },
+            { id: 73, category: "부탁 및 제안", sentence: "Could you give me a hand?", situation: "높은 선반에 있는 물건을 꺼내려 할 때, 키가 큰 친구에게 '좀 도와줄래?'라고 가볍게 부탁할 때.", examples: ["I can't lift this. Could you give me a hand?", "Could you give me a hand with these groceries?", "I'm trying to fix my bike. Could you give me a hand?"] },
+            { id: 74, category: "부탁 및 제안", sentence: "How about grabbing dinner tonight?", situation: "친구에게 '오늘 저녁 같이 먹는 거 어때?'라고 가볍게 제안할 때.", examples: ["I'm free after 7. How about grabbing dinner tonight?", "A: How about grabbing dinner? B: Sounds great.", "We haven't seen each other in a while. How about grabbing dinner?"] },
+            { id: 75, category: "부탁 및 제안", sentence: "Why don't we go to the movies?", situation: "주말에 할 일이 없을 때 '우리 영화 보러 가는 게 어때?'라고 제안할 때.", examples: ["It's raining outside. Why don't we go to the movies?", "A: I'm bored. B: Why don't we go to the movies?", "That new action movie is out. Why don't we go see it?"] },
+            { id: 76, category: "부탁 및 제안", sentence: "I suggest we take a break.", situation: "몇 시간 동안 계속된 회의에 지쳐서 '우리 좀 쉬는 게 좋겠어'라고 제안할 때.", examples: ["We've been working for hours. I suggest we take a break.", "This problem is complex. I suggest we sleep on it.", "I suggest we reconsider the budget."] },
+            { id: 77, category: "부탁 및 제안", sentence: "Would you be interested in...?", situation: "고객에게 '저희 신제품에... 관심 있으신가요?'라고 정중하게 제안할 때.", examples: ["Would you be interested in joining our webinar?", "We have a special offer. Would you be interested in hearing about it?", "Would you be interested in going to a concert this Friday?"] },
+            { id: 78, category: "부탁 및 제안", sentence: "Let me know if you need anything.", situation: "아픈 친구를 방문하고 떠나면서 '뭐 필요한 거 있으면 (언제든) 알려줘'라고 말할 때.", examples: ["I'm here to help. Let me know if you need anything.", "Welcome to the team! Let me know if you need anything.", "Enjoy your stay. Let me know if you need anything."] },
+            { id: 79, category: "부탁 및 제안", sentence: "It's up to you.", situation: "'저녁 뭐 먹을까?'라는 질문에 '난 아무거나 괜찮아. 네가 정해'라고 결정권을 넘길 때.", examples: ["A: Should we go now or later? B: It's up to you.", "You can pay in cash or by credit card. It's up to you.", "I don't mind where we go. It's completely up to you."] },
+            { id: 80, category: "부탁 및 제안", sentence: "Feel free to contact me.", situation: "이메일이나 발표를 마치면서 '궁금한 점 있으면 편하게 연락 주세요'라고 말할 때.", examples: ["If you have any questions, feel free to contact me.", "My phone number is on the card. Feel free to contact me anytime.", "Feel free to contact me if you need further information."] },
+            { id: 81, category: "감정 및 느낌 표현", sentence: "I'm feeling under the weather.", situation: "감기 기운이 있거나 컨디션이 좋지 않아 '몸이 좀 안 좋아'라고 말할 때.", examples: ["I think I'll stay home today. I'm feeling a bit under the weather.", "A: You look pale. Are you okay? B: I'm feeling under the weather.", "She's feeling under the weather, so she's not coming to the party."] },
+            { id: 82, category: "감정 및 느낌 표현", sentence: "I'm over the moon!", situation: "승진 소식을 듣거나, 바라던 시험에 합격했을 때 '완전 기뻐!'라고 말할 때.", examples: ["I got the job! I'm over the moon!", "She was over the moon about her engagement.", "He's over the moon because his team won the championship."] },
+            { id: 83, category: "감정 및 느낌 표현", sentence: "That's a bit disappointing.", situation: "기대했던 영화가 생각보다 재미없었을 때, '좀 실망스러운데'라고 말할 때.", examples: ["I thought I did well on the test, but my score is a bit disappointing.", "A: The concert was cancelled. B: Oh, that's a bit disappointing.", "It's a bit disappointing that he didn't even call."] },
+            { id: 84, category: "감정 및 느낌 표현", sentence: "I'm fed up with this.", situation: "계속되는 소음이나, 반복되는 실수에 '이거 정말 지긋지긋해', '질렸어'라고 짜증을 낼 때.", examples: ["I'm fed up with his excuses.", "I've been waiting for an hour. I'm fed up with this.", "She's fed up with working long hours."] },
+            { id: 85, category: "감정 및 느낌 표현", sentence: "I can't wait for the weekend.", situation: "유난히 힘든 한 주를 보내고, '주말이 너무 기다려져'라고 금요일 오전에 말할 때.", examples: ["This week has been so stressful. I can't wait for the weekend.", "A: What are you doing this weekend? B: Going camping! I can't wait.", "I can't wait for my vacation next month."] },
+            { id: 86, category: "감정 및 느낌 표현", sentence: "It's driving me crazy.", situation: "윗집의 쿵쿵거리는 소리 때문에 '그것 때문에 미치겠어'라고 불평할 때.", examples: ["This constant noise is driving me crazy.", "I've been trying to solve this problem all day. It's driving me crazy.", "Stop whistling! It's driving me crazy."] },
+            { id: 87, category: "감정 및 느낌 표현", sentence: "I have mixed feelings about it.", situation: "승진은 했지만, 그로 인해 낯선 도시로 이사 가야 할 때 '기분이 복잡미묘해'라고 말할 때.", examples: ["I have mixed feelings about my daughter going to college.", "A: Are you excited about the new job? B: I have mixed feelings about it.", "He has mixed feelings about retiring."] },
+            { id: 88, category: "감정 및 느낌 표현", sentence: "What a relief!", situation: "잃어버린 줄 알았던 지갑을 가방 안에서 찾았을 때 '정말 다행이다!'라고 안도할 때.", examples: ["I found my keys! What a relief!", "A: The doctor said it's not serious. B: Oh, what a relief!", "What a relief! I thought I missed the deadline."] },
+            { id: 89, category: "감정 및 느낌 표현", sentence: "I'm stressed out.", situation: "시험, 이사, 업무 마감이 한꺼번에 겹쳐서 '스트레스 너무 받아'라고 말할 때.", examples: ["I have three exams next week. I'm so stressed out.", "She's been really stressed out about the wedding.", "Don't talk to me. I'm too stressed out right now."] },
+            { id: 90, category: "감정 및 느낌 표현", sentence: "I'm really looking forward to it.", situation: "다음 달에 가는 해외여행을 생각하며 '정말 기대돼'라고 설레어 할 때.", examples: ["I'm really looking forward to the concert this weekend.", "A: We're having a party next Friday. B: Sounds fun! I'm really looking forward to it.", "He's really looking forward to starting his new job."] },
+            { id: 91, category: "관계 및 사회생활", sentence: "It was nice meeting you.", situation: "파티에서 처음 만난 사람과 대화를 나누고 헤어질 때 '만나서 반가웠습니다'라고 인사할 때.", examples: ["Thanks for the chat. It was nice meeting you.", "It was nice meeting you, Mr. Brown. I'll be in touch.", "A: I have to go now. B: Okay, it was nice meeting you."] },
+            { id: 92, category: "관계 및 사회생활", sentence: "Let's keep in touch.", situation: "오랜만에 만난 친구와 헤어지면서 '앞으로도 계속 연락하고 지내자'고 말할 때.", examples: ["It was great to see you! Let's keep in touch.", "Here's my email address. Let's keep in touch.", "Even though you're moving, let's keep in touch."] },
+            { id: 93, category: "관계 및 사회생활", sentence: "I've heard so much about you.", situation: "친구의 연인을 드디어 소개받는 자리에서 '말씀 많이 들었습니다'라고 인사할 때.", examples: ["Hi, I'm Tom. I've heard so much about you from Jane.", "It's great to finally meet you. I've heard so much about you.", "A: This is my boss, Ms. Lee. B: A pleasure. I've heard so much about you."] },
+            { id: 94, category: "관계 및 사회생활", sentence: "Make yourself at home.", situation: "손님을 집으로 초대해서 '편하게 계세요'라고 말할 때.", examples: ["Come on in! Make yourself at home.", "Can I get you a drink? Please, make yourself at home.", "A: Thanks for having me. B: Of course. Make yourself at home."] },
+            { id: 95, category: "관계 및 사회생활", sentence: "Help yourself to some food.", situation: "홈 파티를 열고 손님들에게 '음식 마음껏 드세요'라고 권할 때.", examples: ["The food is on the table. Please help yourself.", "Don't be shy. Help yourself to some cookies.", "A: Can I have some cake? B: Of course, help yourself."] },
+            { id: 96, category: "관계 및 사회생활", sentence: "Thanks for having me.", situation: "친구의 집이나 파티에 초대받았다가 떠나면서 '초대해 주셔서 감사합니다'라고 인사할 때.", examples: ["The party was great! Thanks for having me.", "I had a lovely evening. Thanks for having me.", "A: Thanks for coming. B: Thanks for having me."] },
+            { id: 97, category: "관계 및 사회생활", sentence: "I'm throwing a party on Friday.", situation: "친구들에게 '나 금요일에 파티 열어'라고 알리며 초대할 때.", examples: ["I'm throwing a party for my birthday. Can you come?", "We're throwing a housewarming party next weekend.", "A: What are you doing Friday? B: Nothing. A: I'm throwing a party!"] },
+            { id: 98, category: "관계 및 사회생활", sentence: "Are you free this weekend?", situation: "친구에게 데이트 신청을 하거나 약속을 잡기 위해 '이번 주말에 시간 있어?'라고 물어볼 때.", examples: ["Are you free this weekend? I was thinking we could go hiking.", "A: Are you free this weekend? B: I think so. Why?", "If you're free this weekend, we should check out that new cafe."] },
+            { id: 99, category: "관계 및 사회생활", sentence: "I'd love to, but I have other plans.", situation: "친구의 파티 초대에 '정말 가고 싶은데, (아쉽게도) 다른 약속이 있어'라고 정중하게 거절할 때.", examples: ["A: Want to see a movie? B: I'd love to, but I have other plans.", "I'd love to join you, but I already have plans with my family.", "A: Are you coming to dinner? B: I'd love to, but I have other plans."] },
+            { id: 100, category: "관계 및 사회생활", sentence: "Maybe some other time?", situation: "상대방의 제안을 거절한 뒤, '다음에 혹시...?'라고 여지를 남기며 미안함을 표현할 때.", examples: ["A: I have other plans. B: Oh, okay. Maybe some other time?", "I'm too busy this week. Maybe some other time?", "A: I can't make it. B: No worries. Maybe some other time."] }
+        ];
+
+        let myCategoryChart;
+        let currentCategory = 'all';
+        let currentSearchTerm = '';
+
+        const categoryData = {
+            labels: ["일상 대화", "의견 표현 및 토론", "직장 및 비즈니스", "여행 및 길 묻기", "부탁 및 제안", "감정 및 느낌 표현", "관계 및 사회생활"],
+            counts: [20, 20, 20, 10, 10, 10, 10]
+        };
+
+        const categoryMap = {
+            "일상 대화": "일상 대화",
+            "의견 표현 및 토론": "의견 표현 및 토론",
+            "직장 및 비즈니스": "직장 및 비즈니스",
+            "여행 및 길 묻기": "여행 및 길 묻기",
+            "부탁 및 제안": "부탁 및 제안",
+            "감정 및 느낌 표현": "감정 및 느낌 표현",
+            "관계 및 사회생활": "관계 및 사회생활"
+        };
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            renderChart();
+            renderSentences();
+            setupListeners();
+            // Pre-load voices if possible
+            window.speechSynthesis.getVoices();
+        });
+
+        function renderChart() {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            myCategoryChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: categoryData.labels,
+                    datasets: [{
+                        data: categoryData.counts,
+                        backgroundColor: [
+                            '#3B82F6', '#10B981', '#F59E0B', '#EF4444', 
+                            '#8B5CF6', '#EC4899', '#6366F1'
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    family: "'Noto Sans KR', sans-serif"
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.raw}개`;
+                                }
+                            }
+                        }
+                    },
+                    onClick: handleChartClick
+                }
+            });
+        }
+
+        function renderSentences() {
+            const grid = document.getElementById('sentence-grid');
+            grid.innerHTML = '';
+            
+            const filteredSentences = sentences.filter(s => {
+                const matchesCategory = currentCategory === 'all' || s.category === currentCategory;
+                const matchesSearch = currentSearchTerm === '' || 
+                                      s.sentence.toLowerCase().includes(currentSearchTerm) ||
+                                      s.situation.toLowerCase().includes(currentSearchTerm) ||
+                                      s.examples.join(' ').toLowerCase().includes(currentSearchTerm);
+                return matchesCategory && matchesSearch;
+            });
+
+            if (filteredSentences.length === 0) {
+                grid.innerHTML = `<p class="text-gray-600 col-span-full text-center">일치하는 문장이 없습니다.</p>`;
+                return;
+            }
+
+            filteredSentences.forEach(s => {
+                const card = `
+                    <div class="sentence-card bg-white rounded-xl shadow-md overflow-hidden" data-category="${s.category}">
+                        <div class="p-5 cursor-pointer sentence-card-toggle hover:bg-gray-100 relative group">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-xs font-semibold uppercase tracking-wider ${getCategoryColor(s.category)}">${s.category}</span>
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="speakText('${escapeSingleQuotes(s.sentence)}', this); event.stopPropagation();" class="text-gray-400 hover:text-blue-600 transition-colors p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-300" title="발음 듣기">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                        </svg>
+                                    </button>
+                                    <span class="text-gray-400 text-xl transition-transform transform duration-200 toggle-icon">+</span>
+                                </div>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 pr-8">${s.sentence}</h3>
+                        </div>
+                        <div class="sentence-card-details hidden bg-gray-50 p-5 border-t border-gray-200">
+                            <div class="mb-4">
+                                <h4 class="font-semibold text-sm text-gray-700 mb-1">[상황 이미지]</h4>
+                                <p class="text-gray-600 text-sm">${s.situation}</p>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-sm text-gray-700 mb-2">[활용 문장]</h4>
+                                <ul class="list-disc list-inside space-y-2 text-sm text-gray-600">
+                                    ${s.examples.map(ex => `
+                                        <li class="flex items-start justify-between group/ex">
+                                            <span>${ex}</span>
+                                            <button onclick="speakText('${escapeSingleQuotes(ex)}', this); event.stopPropagation();" class="ml-2 text-gray-300 hover:text-blue-500 opacity-0 group-hover/ex:opacity-100 transition-opacity" title="이 문장 듣기">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                                </svg>
+                                            </button>
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.innerHTML += card;
+            });
+
+            addCardListeners();
+        }
+
+        function escapeSingleQuotes(str) {
+            return str.replace(/'/g, "\\'");
+        }
+
+        function speakText(text, btnElement) {
+            if ('speechSynthesis' in window) {
+                // Cancel current speech if any
+                window.speechSynthesis.cancel();
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                
+                // Try to set Voice to English
+                const voices = window.speechSynthesis.getVoices();
+                const englishVoice = voices.find(voice => voice.lang.includes('en-US')) || voices.find(voice => voice.lang.includes('en'));
+                
+                if (englishVoice) {
+                    utterance.voice = englishVoice;
+                }
+                
+                utterance.lang = 'en-US'; // Fallback
+                utterance.rate = 0.9; // Slightly slower for clarity
+                utterance.pitch = 1;
+
+                // Visual feedback
+                const icon = btnElement.querySelector('svg');
+                icon.classList.add('speaking');
+                
+                utterance.onend = () => {
+                     icon.classList.remove('speaking');
+                };
+                
+                utterance.onerror = () => {
+                    icon.classList.remove('speaking');
+                }
+
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert("이 브라우저는 음성 합성을 지원하지 않습니다.");
+            }
+        }
+
+        function getCategoryColor(category) {
+            switch(category) {
+                case "일상 대화": return "text-blue-600";
+                case "의견 표현 및 토론": return "text-green-600";
+                case "직장 및 비즈니스": return "text-yellow-600";
+                case "여행 및 길 묻기": return "text-red-600";
+                case "부탁 및 제안": return "text-purple-600";
+                case "감정 및 느낌 표현": return "text-pink-600";
+                case "관계 및 사회생활": return "text-indigo-600";
+                default: return "text-gray-600";
+            }
+        }
+
+        function addCardListeners() {
+            document.querySelectorAll('.sentence-card-toggle').forEach(toggle => {
+                toggle.addEventListener('click', (e) => {
+                    // Don't toggle if clicking the speaker button (handled by stopPropagation inline, but good safety)
+                    if(e.target.closest('button')) return;
+
+                    const details = toggle.nextElementSibling;
+                    const icon = toggle.querySelector('.toggle-icon');
+                    details.classList.toggle('hidden');
+                    icon.textContent = details.classList.contains('hidden') ? '+' : '−';
+                });
+            });
+        }
+
+        function setupListeners() {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentCategory = btn.dataset.category;
+                    
+                    document.querySelectorAll('.filter-btn').forEach(b => {
+                        b.classList.remove('active', 'bg-blue-600', 'text-white');
+                        b.classList.add('bg-gray-200', 'text-gray-700');
+                    });
+                    
+                    btn.classList.add('active', 'bg-blue-600', 'text-white');
+                    btn.classList.remove('bg-gray-200', 'text-gray-700');
+                    
+                    renderSentences();
+                });
+            });
+
+            document.getElementById('search-bar').addEventListener('input', (e) => {
+                currentSearchTerm = e.target.value.toLowerCase();
+                renderSentences();
+            });
+        }
+
+        function handleChartClick(evt) {
+            const points = myCategoryChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+            if (points.length) {
+                const firstPoint = points[0];
+                const label = myCategoryChart.data.labels[firstPoint.index];
+                const category = categoryMap[label];
+                
+                if (category) {
+                    currentCategory = category;
+                    currentSearchTerm = '';
+                    document.getElementById('search-bar').value = '';
+                    
+                    document.querySelectorAll('.filter-btn').forEach(b => {
+                        b.classList.remove('active', 'bg-blue-600', 'text-white');
+                        b.classList.add('bg-gray-200', 'text-gray-700');
+                        if (b.dataset.category === category) {
+                            b.classList.add('active', 'bg-blue-600', 'text-white');
+                            b.classList.remove('bg-gray-200', 'text-gray-700');
+                        }
+                    });
+                    
+                    renderSentences();
+                }
+            }
+        }
+
+    </script>
+
+</body>
+</html>
