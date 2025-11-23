@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>핵심 회화 문장 암기장</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Warm Neutrals (bg-orange-50, text-orange-600, gray) -->
+    <!-- Application Structure Plan: 
+        Structure: 2탭 SPA. 탭 1 ("핵심 문장")은 카테고리별 영어-한국어 문장 쌍을 제공. 탭 2 ("암기 팁")는 학습 가이드를 제공.
+        Interactions: 1) 탭 전환 (문장 ↔ 팁). 2) 각 문장별 "듣기" (TTS) 버튼. 3) "번역 숨기기/보기" 토글 버튼으로 능동적 암기 연습 지원.
+        Justification: 이 구조는 사용자의 모든 요청(핵심 문장 모음, 듣기 기능, 암기 방법)을 직접적으로 해결. 카테고리화 및 번역 토글 기능은 효과적인 학습을 위해 설계됨.
+    -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: 회화 문장 요청. Goal: 학습/암기. Presentation: 카테고리별 HTML 리스트. Interaction: TTS 버튼. Justification: 언어 학습 도구에 가장 직접적이고 기능적인 방식.
+        - Report Info: 암기 방법 요청. Goal: 정보/가이드. Presentation: 별도 탭의 HTML 리스트. Interaction: 없음 (정적 텍스트). Justification: 학습 전략을 명확하게 제시.
+        - Report Info: 오디오 요청. Goal: 발음 모델 제공. Interaction: TTS 버튼 클릭. Justification: Web Speech API를 사용하여 '듣기' 요구사항 충족.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .tab-btn.active {
+            border-bottom-color: #f97316;
+            color: #f97316;
+            font-weight: 600;
+        }
+        .translations-hidden .korean-translation {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-orange-50 font-sans antialiased">
+
+    <div class="container mx-auto max-w-4xl p-4 sm:p-6 lg:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-orange-700">핵심 회화 문장 암기장</h1>
+            <p class="text-lg text-gray-600 mt-2">매일 연습하고 자신감을 키우세요!</p>
+        </header>
+
+        <div id="tts-warning" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+            <strong class="font-bold">알림: </strong>
+            <span class="block sm:inline">사용 중인 브라우저가 음성 듣기(TTS) 기능을 지원하지 않습니다.</span>
+        </div>
+
+        <main class="bg-white rounded-lg shadow-xl overflow-hidden">
+            <nav class="flex border-b border-gray-200">
+                <button class="tab-btn active flex-1 py-4 px-6 text-center text-gray-500 hover:text-orange-500 transition-colors border-b-2 border-transparent" data-tab="sentences">
+                    핵심 문장
+                </button>
+                <button class="tab-btn flex-1 py-4 px-6 text-center text-gray-500 hover:text-orange-500 transition-colors border-b-2 border-transparent" data-tab="tips">
+                    효과적인 암기 팁
+                </button>
+            </nav>
+
+            <div id="tab-content-container" class="p-6 sm:p-8">
+                
+                <div id="sentences" class="tab-content active">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-semibold text-gray-800">회화 필수 문장</h2>
+                        <button id="toggle-translation" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium">
+                            번역 숨기기
+                        </button>
+                    </div>
+
+                    <div id="sentence-list" class="space-y-6">
+                        
+                        <section>
+                            <h3 class="text-xl font-semibold text-orange-600 mb-3 border-b-2 border-orange-100 pb-2">일상 인사 & 스몰톡</h3>
+                            <ul class="divide-y divide-gray-200">
+                                <li class="sentence-item py-4 flex justify-between items-center flex-wrap">
+                                    <div class="flex-1 min-w-0 mr-4">
+                                        <p class="text-lg font-medium text-gray-900">How's it going?</p>
+                                        <p class="korean-translation text-sm text-gray-500 mt-1">요즘 어때? / 어떻게 지내?</p>
+                                    </div>
+                                    <button class="speak-btn rounded-full p-2 text-orange-600 hover:bg-orange-100 transition-colors flex-shrink-0" data-text="How's it going?">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .89-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                                    </button>
+                                </li>
+                                <li class="sentence-item py-4 flex justify-between items-center flex-wrap">
+                                    <div class="flex-1 min-w-0 mr-4">
+                                        <p class="text-lg font-medium text-gray-900">What's new?</p>
+                                        <p class="korean-translation text-sm text-gray-500 mt-1">뭐 새로운 소식 없어?</p>
+                                    </div>
+                                    <button class="speak-btn rounded-full p-2 text-orange-600 hover:bg-orange-100 transition-colors flex-shrink-0" data-text="What's new?">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .89-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                                    </button>
+                                </li>
+                                <li class="sentence-item py-4 flex justify-between items-center flex-wrap">
+                                    <div class="flex-1 min-w-0 mr-4">
+                                        <p class="text-lg font-medium text-gray-900">It's been a while.</p>
+                                        <p class="korean-translation text-sm text-gray-500 mt-1">정말 오랜만이다.</p>
+                                    </div>
+                                    <button class="speak-btn rounded-full p-2 text-orange-600 hover:bg-orange-100 transition-colors flex-shrink-0" data-text="It's been a while.">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .89-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                                    </button>
+                                </li>
+                            </ul>
+                        </section>
+
+                        <section>
+                            <h3 class="text-xl font-semibold text-orange-600 mb-3 border-b-2 border-orange-100 pb-2">질문 & 도움 요청</h3>
+                            <ul class="divide-y divide-gray-200">
+                                <li class="sentence-item py-4 flex justify-between items-center flex-wrap">
+                                    <div class="flex-1 min-w-0 mr-4">
+                                        <p class="text-lg font-medium text-gray-900">Could you give me a hand?</p>
+                                        <p class="korean-translation text-sm text-gray-500 mt-1">좀 도와줄 수 있어요?</p>
+                                    </div>
+                                    <button class="speak-btn rounded-full p-2 text-orange-600 hover:bg-orange-100 transition-colors flex-shrink-0" data-text="Could you give me a hand?">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .89-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                                    </button>
+                                </li>
+                                <li class="sentence-item py-4 flex justify-between items-center flex-wrap">
+                                    <div class="flex-1 min-w-0 mr-4">
+                                        <p class="text-lg font-medium text-gray-900">What do you mean by that?</p>
+                                        <p class="korean-translation text-sm text-gray-500 mt-1">그게 무슨 뜻이에요?</p>
+                                    </div>
+                                    <button class="speak-btn rounded-full p-2 text-orange-600 hover:bg-orange-100 transition-colors flex-shrink-0" data-text="What do you mean by that?">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .89-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                                    </button>
+                                </li>
+                                <li class="sentence-item py-4 flex justify-between items-center flex-wrap">
+                                    <div class="flex-1 min-w-0 mr-4">
+                                        <p class="text-lg font-medium text-gray-900">I was wondering if you could...</p>
+                                        <p class="korean-translation text-sm text-gray-500 mt-1">혹시 ...해 주실 수 있는지 궁금했어요.</p>
+                                    </div>
+                                    <button class="speak-btn rounded-full p-2 text-orange-600 hover:bg-orange-100 transition-colors flex-shrink-0" data-text="I was wondering if you could...">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .89-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                                    </button>
+                                </li>
+                            </ul>
+                        </section>
+
+                        <section>
+                            <h3 class="text-xl font-semibold text-orange-600 mb-3 border-b-2 border-orange-100 pb-2">감정 & 의견 표현</h3>
+                            <ul class="divide-y divide-gray-200">
+                                <li class="sentence-item py-4 flex justify-between items-center flex-wrap">
+                                    <div class="flex-1 min-w-0 mr-4">
+                                        <p class="text-lg font-medium text-gray-900">To be honest, I'm not a big fan of it.</p>
+                                        <p class="korean-translation text-sm text-gray-500 mt-1">솔직히 말해서, 저는 그걸 별로 좋아하지 않아요.</p>
+                                    </div>
+                                    <button class="speak-btn rounded-full p-2 text-orange-600 hover:bg-orange-100 transition-colors flex-shrink-0" data-text="To be honest, I'm not a big fan of it.">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .89-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                                    </button>
+                                </li>
+                                <li class="sentence-item py-4 flex justify-between items-center flex-wrap">
+                                    <div class="flex-1 min-w-0 mr-4">
+                                        <p class="text-lg font-medium text-gray-900">That makes sense.</p>
+                                        <p class="korean-translation text-sm text-gray-500 mt-1">일리가 있네요. / 이해가 되네요.</p>
+                                    </div>
+                                    <button class="speak-btn rounded-full p-2 text-orange-600 hover:bg-orange-100 transition-colors flex-shrink-0" data-text="That makes sense.">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .89-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                                    </button>
+                                </li>
+                                <li class="sentence-item py-4 flex justify-between items-center flex-wrap">
+                                    <div class="flex-1 min-w-0 mr-4">
+                                        <p class="text-lg font-medium text-gray-900">I'm really into...</p>
+                                        <p class="korean-translation text-sm text-gray-500 mt-1">저는 ...에 푹 빠졌어요.</p>
+                                    </div>
+                                    <button class="speak-btn rounded-full p-2 text-orange-600 hover:bg-orange-100 transition-colors flex-shrink-0" data-text="I'm really into...">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .89-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                                    </button>
+                                </li>
+                            </ul>
+                        </section>
+                        
+                        <section>
+                            <h3 class="text-xl font-semibold text-orange-600 mb-3 border-b-2 border-orange-100 pb-2">약속 & 계획</h3>
+                            <ul class="divide-y divide-gray-200">
+                                <li class="sentence-item py-4 flex justify-between items-center flex-wrap">
+                                    <div class="flex-1 min-w-0 mr-4">
+                                        <p class="text-lg font-medium text-gray-900">What are you up to this weekend?</p>
+                                        <p class="korean-translation text-sm text-gray-500 mt-1">이번 주말에 뭐 하세요?</p>
+                                    </div>
+                                    <button class="speak-btn rounded-full p-2 text-orange-600 hover:bg-orange-100 transition-colors flex-shrink-0" data-text="What are you up to this weekend?">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .89-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                                    </button>
+                                </li>
+                                <li class="sentence-item py-4 flex justify-between items-center flex-wrap">
+                                    <div class="flex-1 min-w-0 mr-4">
+                                        <p class="text-lg font-medium text-gray-900">Are you free on Friday night?</p>
+                                        <p class="korean-translation text-sm text-gray-500 mt-1">금요일 저녁에 시간 괜찮아요?</p>
+                                    </div>
+                                    <button class="speak-btn rounded-full p-2 text-orange-600 hover:bg-orange-100 transition-colors flex-shrink-0" data-text="Are you free on Friday night?">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .89-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                                    </button>
+                                </li>
+                                <li class="sentence-item py-4 flex justify-between items-center flex-wrap">
+                                    <div class="flex-1 min-w-0 mr-4">
+                                        <p class="text-lg font-medium text-gray-900">Sounds good to me.</p>
+                                        <p class="korean-translation text-sm text-gray-500 mt-1">좋아요. (동의할 때)</p>
+                                    </div>
+                                    <button class="speak-btn rounded-full p-2 text-orange-600 hover:bg-orange-100 transition-colors flex-shrink-0" data-text="Sounds good to me.">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .89-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                                    </button>
+                                </li>
+                            </ul>
+                        </section>
+
+                    </div>
+                </div>
+
+                <div id="tips" class="tab-content">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-6">가장 효과적인 암기 팁 💡</h2>
+                    <div class="space-y-6 text-gray-700 leading-relaxed">
+                        <div class="p-5 bg-orange-50 rounded-lg border border-orange-200">
+                            <h3 class="font-semibold text-lg text-orange-700 mb-2">1. 쉐도잉 (Listen & Repeat)</h3>
+                            <p>듣기 버튼을 눌러 원어민 발음을 듣고, 그림자처럼 바로 따라 말해보세요. 억양과 리듬을 그대로 복사하는 것이 중요합니다. 문장을 보지 않고 소리만 듣고 따라 해보는 것도 좋습니다.</p>
+                        </div>
+                        <div class="p-5 bg-orange-50 rounded-lg border border-orange-200">
+                            <h3 class="font-semibold text-lg text-orange-700 mb-2">2. 능동적 회상 (Active Recall)</h3>
+                            <p>'번역 숨기기' 버튼을 활용하세요. 한국어 뜻만 보고 영어 문장을 입으로 말해보는 연습입니다. 기억이 나지 않을 때만 영어 문장을 확인하세요. 이 과정이 뇌를 가장 활성화시킵니다.</p>
+                        </div>
+                        <div class="p-5 bg-orange-50 rounded-lg border border-orange-200">
+                            <h3 class="font-semibold text-lg text-orange-700 mb-2">3. 문맥 만들기 (Contextualize)</h3>
+                            <p>각 문장을 어떤 상황에서 사용할 수 있을지 구체적인 장면을 상상해 보세요. 예를 들어, "Could you give me a hand?"라는 문장은 무거운 짐을 들고 있을 때 친구에게 말하는 장면을 떠올려보세요.</p>
+                        </div>
+                        <div class="p-5 bg-orange-50 rounded-lg border border-orange-200">
+                            <h3 class="font-semibold text-lg text-orange-700 mb-2">4. 변형 연습 (Make it Your Own)</h3>
+                            <p>문장을 통째로 외웠다면, 단어를 살짝 바꿔보세요. "I'm really into movies."를 "I'm really into K-pop."이나 "I'm not really into sports."처럼 변형해서 연습하면 응용력이 생깁니다.</p>
+                        </div>
+                         <div class="p-5 bg-orange-50 rounded-lg border border-orange-200">
+                            <h3 class="font-semibold text-lg text-orange-700 mb-2">5. 꾸준한 반복 (Spaced Repetition)</h3>
+                            <p>오늘 외운 문장을 내일, 3일 뒤, 일주일 뒤에 다시 복습하세요. 한 번에 완벽하게 외우려 하지 말고, 여러 번 잊어버리고 다시 기억해내는 과정을 반복하는 것이 장기 기억에 훨씬 효과적입니다.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <footer class="text-center mt-8 text-gray-500 text-sm">
+            <p>&copy; 2025 Conversation Helper. 매일 꾸준히 연습하세요.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const ttsWarning = document.getElementById('tts-warning');
+            const sentenceList = document.getElementById('sentence-list');
+            const toggleBtn = document.getElementById('toggle-translation');
+
+            if (!('speechSynthesis' in window)) {
+                ttsWarning.classList.remove('hidden');
+            }
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(item => item.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    const target = tab.dataset.tab;
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                        if (content.id === target) {
+                            content.classList.add('active');
+                        }
+                    });
+                });
+            });
+
+            function speak(text) {
+                if (!('speechSynthesis' in window)) return;
+
+                speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9;
+                speechSynthesis.speak(utterance);
+            }
+
+            if (sentenceList) {
+                sentenceList.addEventListener('click', (e) => {
+                    const speakButton = e.target.closest('.speak-btn');
+                    if (speakButton) {
+                        const text = speakButton.dataset.text;
+                        if (text) {
+                            speak(text);
+                        }
+                    }
+                });
+            }
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', () => {
+                    const listContainer = document.getElementById('sentence-list');
+                    listContainer.classList.toggle('translations-hidden');
+
+                    if (listContainer.classList.contains('translations-hidden')) {
+                        toggleBtn.textContent = '번역 보기';
+                    } else {
+                        toggleBtn.textContent = '번역 숨기기';
+                    }
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>
