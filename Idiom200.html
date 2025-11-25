@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인터랙티브 영어 관용구 학습 (오디오 지원)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Warm Neutrals with Blue Accents -->
+    <!-- Application Structure Plan: 기존의 검색 및 탐색 구조를 유지하면서 '청각적 학습' 요소를 통합했습니다. 각 카드에 '스피커 아이콘 버튼'을 배치하여 직관적으로 소리를 들을 수 있게 했습니다. Web Speech API를 활용하여 외부 의존성 없이 텍스트 음성 변환(TTS)을 구현했습니다. -->
+    <!-- Visualization & Content Choices: 
+        - Interaction (TTS): 'speak-btn' 클래스를 가진 버튼을 클릭하면 브라우저의 SpeechSynthesis를 호출합니다.
+        - Data Handling: 예시 대화에 포함된 HTML 태그(<br> 등)는 음성 변환 시 정규식을 통해 제거하여 깨끗한 문장으로 읽도록 처리했습니다.
+        - Event Handling: 스피커 버튼 클릭 시 카드가 접히거나 펴지는 것을 방지하기 위해 event.stopPropagation()을 사용했습니다.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            /* Prevent text selection when clicking buttons quickly */
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .example-content {
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        .example-content.expanded {
+            max-height: 300px; /* Increased height for longer dialogues */
+            opacity: 1;
+        }
+        .pagination-btn.active {
+            background-color: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+        .idiom-card {
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .idiom-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transform: translateY(-1px);
+        }
+        .arrow {
+            transition: transform 0.3s ease-out;
+        }
+        .expanded .arrow {
+            transform: rotate(90deg);
+        }
+        /* Audio button styling */
+        .speak-btn {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: 1px solid #dbeafe;
+        }
+        .speak-btn:hover {
+            background-color: #dbeafe;
+            transform: scale(1.05);
+        }
+        .speak-btn:active {
+            transform: scale(0.95);
+            background-color: #bfdbfe;
+        }
+        .highlight-playing {
+            color: #d97706; /* Amber-600 */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-8 max-w-4xl">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-blue-700">영어 관용구 200선</h1>
+            <p class="text-lg text-gray-600 mt-2">듣고 말하며 배우는 인터랙티브 학습</p>
+        </header>
+
+        <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
+            <div class="relative">
+                <input type="text" id="searchInput" class="w-full p-4 pl-5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-lg" placeholder="🔍 검색 (예: piece of cake, 식은 죽 먹기)">
+            </div>
+            <p id="introText" class="mt-4 text-gray-700 text-sm sm:text-base leading-relaxed">
+                200개의 필수 영어 관용구를 원어민 발음과 함께 학습하세요. <br>
+                <span class="inline-flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs mr-1">🔊</span> 버튼을 누르면 관용구와 예시 대화를 들을 수 있습니다.
+            </p>
+        </div>
+
+        <div id="paginationControls" class="flex justify-center items-center flex-wrap gap-2 mb-6"></div>
+
+        <main id="idiomContainer" class="space-y-4">
+            <!-- Idiom cards will be dynamically inserted here -->
+        </main>
+
+        <div id="paginationControlsBottom" class="flex justify-center items-center flex-wrap gap-2 mt-6"></div>
+
+        <footer class="text-center mt-12 text-gray-500 text-sm pb-8">
+            <p>&copy; 2025 Interactive Idiom Explorer. Audio provided by Web Speech API.</p>
+        </footer>
+    </div>
+
+    <script>
+        const idiomData = [
+            { "idiom": "A piece of cake", "trans": "식은 죽 먹기, 아주 쉬운 일", "example": "A: How was the test? <br> B: It was a piece of cake!" },
+            { "idiom": "Break a leg", "trans": "행운을 빌어 (특히 공연 전에)", "example": "A: I'm so nervous about my presentation. <br> B: Break a leg! You'll do great." },
+            { "idiom": "Bite the bullet", "trans": "(하기 싫은 일을) 이를 악물고 하다, 참다", "example": "A: I hate going to the dentist. <br> B: I know, but you just have to bite the bullet." },
+            { "idiom": "Hit the books", "trans": "열심히 공부하다", "example": "A: Sorry, I can't go out tonight. <br> B: Why not? <br> A: I have to hit the books. I have a big exam tomorrow." },
+            { "idiom": "Hit the sack / Hit the hay", "trans": "자러 가다", "example": "A: I'm exhausted. <br> B: Me too. Let's hit the sack." },
+            { "idiom": "Cost an arm and a leg", "trans": "엄청나게 비싸다", "example": "A: I love your new car! <br> B: Thanks, but it cost me an arm and a leg." },
+            { "idiom": "When pigs fly", "trans": "절대 불가능한 일", "example": "A: Do you think he'll ever clean his room? <br> B: Yeah, when pigs fly." },
+            { "idiom": "Let the cat out of the bag", "trans": "비밀을 누설하다", "example": "A: How did he know about the surprise party? <br> B: I think Sarah let the cat out of the bag." },
+            { "idiom": "Spill the beans", "trans": "비밀을 털어놓다", "example": "A: What happened at the meeting? <br> B: Come on, spill the beans!" },
+            { "idiom": "Once in a blue moon", "trans": "아주 드물게", "example": "A: Do you ever go to the opera? <br> B: Only once in a blue moon." },
+            { "idiom": "See eye to eye", "trans": "의견이 일치하다", "example": "A: We finally agreed on the project. <br> B: I'm glad you see eye to eye now." },
+            { "idiom": "On the ball", "trans": "빈틈없이, 재빠르게", "example": "A: Wow, you finished the report already? <br> B: You've got to be on the ball in this job." },
+            { "idiom": "Pull someone's leg", "trans": "~를 놀리다", "example": "A: You won the lottery? For real? <br> B: No, I'm just pulling your leg!" },
+            { "idiom": "Under the weather", "trans": "몸이 좋지 않은", "example": "A: Are you coming to the party? <br> B: I think I'll skip it. I'm feeling a bit under the weather." },
+            { "idiom": "The ball is in your court", "trans": "네 차례야, 네가 결정할 일이야", "example": "A: I've made my offer. <br> B: Now the ball is in your court." },
+            { "idiom": "Barking up the wrong tree", "trans": "헛다리 짚다, 잘못 짚다", "example": "A: I think you stole my pen! <br> B: You're barking up the wrong tree. I haven't seen it." },
+            { "idiom": "Beat around the bush", "trans": "돌려 말하다, 요점을 피하다", "example": "A: Just tell me what happened. <br> B: Stop beating around the bush and get to the point." },
+            { "idiom": "Best of both worlds", "trans": "양쪽의 장점을 모두 누리는 것", "example": "A: Working from home is great. <br> B: You get to save money and be comfortable. It's the best of both worlds." },
+            { "idiom": "By the skin of one's teeth", "trans": "가까스로, 아슬아슬하게", "example": "A: Did you pass the exam? <br> B: Yes, but just by the skin of my teeth." },
+            { "idiom": "Don't judge a book by its cover", "trans": "겉모습만 보고 판단하지 마라", "example": "A: He looks a bit strange. <br> B: Don't judge a book by its cover. He's actually very nice." },
+            { "idiom": "Every cloud has a silver lining", "trans": "쥐구멍에도 볕들 날 있다", "example": "A: I lost my job, but now I can travel. <br> B: See? Every cloud has a silver lining." },
+            { "idiom": "Get out of hand", "trans": "통제 불능이 되다", "example": "A: The party was fun at first. <br> B: But then it got out of hand." },
+            { "idiom": "Go down in flames", "trans": "완전히 실패하다", "example": "A: How was your presentation? <br> B: Terrible. I went down in flames." },
+            { "idiom": "Jump on the bandwagon", "trans": "시류에 편승하다", "example": "A: Everyone is buying that new phone. <br> B: I'm not going to jump on the bandwagon just because it's popular." },
+            { "idiom": "Keep something at bay", "trans": "~을 가까이 오지 못하게 하다", "example": "A: How do you stay so healthy? <br> B: I eat well to keep illness at bay." },
+            { "idiom": "Kill two birds with one stone", "trans": "일석이조", "example": "A: I listen to English podcasts while I exercise. <br> B: Killing two birds with one stone, nice!" },
+            { "idiom": "Let sleeping dogs lie", "trans": "긁어 부스럼 만들지 마라", "example": "A: Should I ask him why he was angry? <br> B: No, just let sleeping dogs lie." },
+            { "idiom": "Make a long story short", "trans": "간단히 말해서", "example": "A: What happened on your trip? <br> B: To make a long story short, we missed our flight and lost our luggage." },
+            { "idiom": "Miss the boat", "trans": "기회를 놓치다", "example": "A: The tickets are all sold out. <br> B: Looks like we missed the boat." },
+            { "idiom": "Not my cup of tea", "trans": "내 취향이 아니야", "example": "A: Do you want to watch this horror movie? <br> B: No thanks, it's not my cup of tea." },
+            { "idiom": "On cloud nine", "trans": "매우 행복한", "example": "A: You look happy! <br> B: I just got engaged! I'm on cloud nine!" },
+            { "idiom": "Rain on someone's parade", "trans": "~의 기분을 망치다", "example": "A: I'm so excited about my vacation! <br> B: I don't want to rain on your parade, but the weather forecast looks terrible." },
+            { "idiom": "Save for a rainy day", "trans": "만약을 위해 저축하다", "example": "A: I always put 10% of my paycheck aside. <br> B: Good idea. It's smart to save for a rainy day." },
+            { "idiom": "Steal someone's thunder", "trans": "~의 공을 가로채다", "example": "A: I was about to announce my promotion, but she announced hers first! <br> B: She totally stole your thunder." },
+            { "idiom": "Take with a grain of salt", "trans": "~을 곧이곧대로 믿지 않다", "example": "A: He said he's a millionaire. <br> B: I'd take that with a grain of salt." },
+            { "idiom": "The elephant in the room", "trans": "모두 알지만 말하기 꺼리는 문제", "example": "A: We need to talk about the budget cuts. <br> B: Yes, let's address the elephant in the room." },
+            { "idiom": "Through thick and thin", "trans": "좋을 때나 나쁠 때나", "example": "A: You've always been there for me. <br> B: Of course, I'll stick with you through thick and thin." },
+            { "idiom": "Throw caution to the wind", "trans": "무모하게 행동하다", "example": "A: I'm thinking of quitting my job and traveling the world. <br> B: Wow, you're really throwing caution to the wind!" },
+            { "idiom": "You can't make an omelet without breaking eggs", "trans": "희생 없이는 얻는 것이 없다", "example": "A: I had to work all weekend to finish this. <br> B: Well, you can't make an omelet without breaking eggs." },
+            { "idiom": "A blessing in disguise", "trans": "전화위복", "example": "A: Getting fired was awful. <br> B: But then you found this great job! It was a blessing in disguise." },
+            { "idiom": "A dime a dozen", "trans": "아주 흔한", "example": "A: These \"unique\" souvenirs are everywhere. <br> B: Yeah, they're a dime a dozen." },
+            { "idiom": "Add insult to injury", "trans": "엎친 데 덮친 격", "example": "A: First my car broke down, and then it started to rain. <br> B: Talk about adding insult to injury!" },
+            { "idiom": "All ears", "trans": "열심히 귀 기울이는", "example": "A: I have some exciting news. <br> B: I'm all ears!" },
+            { "idiom": "At the drop of a hat", "trans": "즉시, 망설임 없이", "example": "A: He's always ready to help. <br> B: Yes, he'll come over at the drop of a hat." },
+            { "idiom": "Back to square one", "trans": "원점으로 돌아가다", "example": "A: The client rejected our proposal. <br> B: So we're back to square one." },
+            { "idiom": "(To be) broke", "trans": "파산한, 돈이 없는", "example": "A: Can you lend me $20? <br> B: Sorry, I'm broke until payday." },
+            { "idiom": "Call it a day", "trans": "(일과를) 마감하다, 끝내다", "example": "A: It's 6 PM. I'm tired. <br> B: Let's call it a day." },
+            { "idiom": "Catch someone red-handed", "trans": "현행범으로 잡다", "example": "A: How did you know he took the cookie? <br> B: I caught him red-handed, with crumbs all over his face." },
+            { "idiom": "Cry over spilt milk", "trans": "이미 엎질러진 물 (후회해도 소용없다)", "example": "A: I can't believe I failed the test. <br> B: There's no use crying over spilt milk. Just study harder next time." },
+            { "idiom": "Cut corners", "trans": "(돈/시간/노력을 아끼려) 절차를 무시하다", "example": "A: The build quality of this house is terrible. <br> B: It looks like the builder cut corners." },
+            { "idiom": "Devil's advocate", "trans": "(토론을 위해) 일부러 반대 의견을 말하는 사람", "example": "A: Everyone agrees this is a great idea. <br> B: Let me play devil's advocate. What if it fails?" },
+            { "idiom": "Don't put all your eggs in one basket", "trans": "모든 것을 한 곳에 걸지 마라", "example": "A: I invested all my money in one stock. <br> B: That's risky. Don't put all your eggs in one basket." },
+            { "idiom": "Drive someone up the wall", "trans": "~를 몹시 화나게 하다", "example": "A: My neighbor's loud music is driving me up the wall. <br> B: You should complain." },
+            { "idiom": "Easier said than done", "trans": "말은 쉽지", "example": "A: You just need to relax. <br> B: That's easier said than done." },
+            { "idiom": "Face the music", "trans": "(잘못의) 결과를 받아들이다", "example": "A: I broke my mom's favorite vase. <br> B: You just have to go home and face the music." },
+            { "idiom": "Fish out of water", "trans": "물 밖에 나온 물고기 (불편한 상황)", "example": "A: How was the party? <br> B: I felt like a fish out of water. I didn't know anyone." },
+            { "idiom": "Fit as a fiddle", "trans": "매우 건강한", "example": "A: My grandpa is 90 years old. <br> B: Wow, and he's still fit as a fiddle." },
+            { "idiom": "Get cold feet", "trans": "(중요한 일을 앞두고) 겁먹다, 긴장하다", "example": "A: Is he really getting married? <br> B: He was, but he got cold feet at the last minute." },
+            { "idiom": "Get something off one's chest", "trans": "속 시원히 털어놓다", "example": "A: You look worried. What's wrong? <br> B: I need to get something off my chest." },
+            { "idiom": "Give the benefit of the doubt", "trans": "(증거는 없지만) ~를 믿어주다", "example": "A: Do you think he's lying? <br> B: I'm not sure. Let's give him the benefit of the doubt." },
+            { "idiom": "Go the extra mile", "trans": "한층 더 노력하다", "example": "A: She always does amazing work. <br> B: It's because she's willing to go the extra mile." },
+            { "idiom": "Hang in there", "trans": "버텨, 힘내", "example": "A: This project is so difficult. <br> B: Hang in there. You're almost finished." },
+            { "idiom": "Have bigger fish to fry", "trans": "더 중요한 할 일이 있다", "example": "A: Can you help me with this? <br> B: Sorry, I have bigger fish to fry right now." },
+            { "idiom": "Hit the nail on the head", "trans": "정곡을 찌르다", "example": "A: His analysis of the problem was perfect. <br> B: He really hit the nail on the head." },
+            { "idiom": "Ignorance is bliss", "trans": "모르는 게 약이다", "example": "A: I don't want to know my exam score. <br> B: Sometimes ignorance is bliss." },
+            { "idiom": "In the heat of the moment", "trans": "홧김에", "example": "A: I can't believe I said that to him. <br> B: You just said it in the heat of the moment." },
+            { "idiom": "It takes two to tango", "trans": "손뼉도 마주쳐야 소리가 난다", "example": "A: He's blaming me for the argument. <br> B: Well, it takes two to tango." },
+            { "idiom": "Keep your chin up", "trans": "기운 내", "example": "A: I failed my driving test again. <br> B: Keep your chin up! You'll pass next time." },
+            { "idiom": "Last straw", "trans": "최후의 인내심, 한계를 넘게 하는 것", "example": "A: He was late again, and that was the last straw. <br> B: You fired him? <br> A: Yes." },
+            { "idiom": "Let someone off the hook", "trans": "~를 봐주다, 용서하다", "example": "A: Were you in trouble for being late? <br> B: No, my boss let me off the hook this time." },
+            { "idiom": "Live and learn", "trans": "살다 보면 배운다", "example": "A: I can't believe I trusted him. <br> B: Live and learn." },
+            { "idiom": "Look before you leap", "trans": "돌다리도 두드려보고 건너라", "example": "A: I'm going to quit my job and start a business! <br> B: You should look before you leap. It's a big risk." },
+            { "idiom": "Mince words", "trans": "(부정적인 말을) 완곡하게 하다", "example": "A: Tell me what you really think. <br> B: I won't mince words. Your plan is terrible." },
+            { "idiom": "(To be) on the fence", "trans": "중립을 지키다, 결정을 못 내리다", "example": "A: Are you voting for A or B? <br> B: I'm still on the fence." },
+            { "idiom": "Out of the blue", "trans": "뜬금없이, 갑자기", "example": "A: Guess who I saw today? <br> B: Who? <br> A: My old friend from college, completely out of the blue." },
+            { "idiom": "Over my dead body", "trans": "내 눈에 흙이 들어가기 전엔 안돼", "example": "A: I want to get a motorcycle. <br> B: Over my dead body!" },
+            { "idiom": "Pass the buck", "trans": "책임을 전가하다", "example": "A: It's not my fault! <br> B: Don't try to pass the buck. You made the mistake." },
+            { "idiom": "Play it by ear", "trans": "그때그때 봐서 하다", "example": "A: What's the plan for this weekend? <br> B: Let's just play it by ear." },
+            { "idiom": "Put your foot in your mouth", "trans": "말실수하다", "example": "A: I asked her when the baby was due. <br> B: And? <br> A: She's not pregnant. I really put my foot in my mouth." },
+            { "idiom": "Read between the lines", "trans": "속뜻을 읽다", "example": "A: He said he's \"fine.\" <br> B: Reading between the lines, I think he's upset." },
+            { "idiom": "Rock the boat", "trans": "풍파를 일으키다, 분란을 만들다", "example": "A: Everyone is happy with the plan. <br> B: Don't rock the boat by complaining now." },
+            { "idiom": "Run circles around someone", "trans": "~보다 훨씬 뛰어나다", "example": "A: He's a good player. <br> B: But she can run circles around him." },
+            { "idiom": "Second wind", "trans": "(지친 후) 다시 솟는 힘", "example": "A: I was so tired during the marathon. <br> B: But then I got my second wind and finished." },
+            { "idiom": "Sit on the fence", "trans": "중립을 지키다, 결정을 못 내리다", "example": "A: You have to choose a side. <br> B: I don't want to. I'm sitting on the fence." },
+            { "idiom": "Speak of the devil", "trans": "호랑이도 제 말 하면 온다", "example": "A: I wonder where Tom is. <br> B: Speak of the devil, here he comes now." },
+            { "idiom": "Take a rain check", "trans": "(약속/제안을) 다음 기회로 미루다", "example": "A: Do you want to go to dinner tonight? <br> B: I'm busy. Can I take a rain check?" },
+            { "idiom": "Take it easy", "trans": "진정해, 쉬엄쉬엄해", "example": "A: I'm so stressed out! <br> B: Take it easy. Everything will be fine." },
+            { "idiom": "The whole nine yards", "trans": "전부, 모든 것", "example": "A: Did you decorate the house for the party? <br> B: Yes, streamers, balloons, the whole nine yards." },
+            { "idiom": "Tie the knot", "trans": "결혼하다", "example": "A: Did you hear about Sarah and Mark? <br> B: Yes, they're finally tying the knot!" },
+            { "idiom": "Time flies", "trans": "시간이 쏜살같다", "example": "A: I can't believe it's almost December. <br> B: I know, time flies." },
+            { "idiom": "To each his own", "trans": "각자 취향이 다른 법", "example": "A: I don't understand why he likes that music. <br> B: Well, to each his own." },
+            { "idiom": "Turn a blind eye", "trans": "못 본 척하다", "example": "A: Did you see him cheating on the test? <br> B: The teacher just turned a blind eye." },
+            { "idiom": "Twenty-four seven (24/7)", "trans": "하루 24시간, 일주일 내내 (항상)", "example": "A: This convenience store is great. <br> B: I know, it's open 24/7." },
+            { "idiom": "Up in the air", "trans": "아직 미정인", "example": "A: Are we still meeting on Friday? <br> B: It's still up in the air. I'll let you know." },
+            { "idiom": "Walk on eggshells", "trans": "살얼음판을 걷다 (조심하다)", "example": "A: My boss is in a terrible mood. <br> B: I feel like I'm walking on eggshells around him." },
+            { "idiom": "Water under the bridge", "trans": "이미 지나간 일", "example": "A: I'm still angry about what he said. <br> B: It was years ago. It's water under the bridge." },
+            { "idiom": "Wear your heart on your sleeve", "trans": "감정을 숨기지 못하다", "example": "A: It's easy to tell when she's upset. <br> B: Yeah, she wears her heart on her sleeve." },
+            { "idiom": "Work like a charm", "trans": "효과가 아주 좋다", "example": "A: How did you fix the computer? <br> B: I just restarted it. Worked like a charm." },
+            { "idiom": "Wrap one's head around something", "trans": "~을 이해하려고 애쓰다", "example": "A: This new theory is so complex. <br> B: I'm still trying to wrap my head around it." },
+            { "idiom": "A snowball effect", "trans": "눈덩이 효과 (점점 커지는)", "example": "A: One small mistake led to a huge problem. <br> B: It was a snowball effect." },
+            { "idiom": "Actions speak louder than words", "trans": "말보다 행동이 중요하다", "example": "A: He keeps promising to change. <br> B: But his actions speak louder than words." },
+            { "idiom": "Against the clock", "trans": "시간에 쫓겨", "example": "A: We have to finish this report by 5 PM. <br> B: We're working against the clock." },
+            { "idiom": "An arm and a leg", "trans": "(Cost an arm and a leg와 동일)", "example": "A: That painting is beautiful. <br> B: It probably cost an arm and a leg." },
+            { "idiom": "Around the clock", "trans": "24시간 내내", "example": "A: The doctors worked around the clock to save him. <br> B: That's incredible." },
+            { "idiom": "As cool as a cucumber", "trans": "매우 침착한", "example": "A: He wasn't nervous for the speech at all. <br> B: He was as cool as a cucumber." },
+            { "idiom": "Ballpark figure", "trans": "어림짐작, 대략적인 수치", "example": "A: How much will the repairs cost? <br> B: I can't give you an exact number, but a ballpark figure would be $500." },
+            { "idiom": "Be in hot water", "trans": "곤경에 처하다", "example": "A: John crashed his dad's car. <br> B: He's going to be in hot water." },
+            { "idiom": "Be on the same page", "trans": "생각이 같다", "example": "A: Let's review the plan to make sure we're on the same page. <br> B: Good idea." },
+            { "idiom": "Bite off more than you can chew", "trans": "감당 못할 일을 떠맡다", "example": "A: I agreed to manage three projects at once. <br> B: Sounds like you've bitten off more than you can chew." },
+            { "idiom": "Blow off steam", "trans": "(스트레스 등으로) 울분을 터뜨리다", "example": "A: I had a bad day at work. <br> B: Let's go to the gym to blow off some steam." },
+            { "idiom": "Burn bridges", "trans": "(돌아갈 수 없게) 관계를 끊다", "example": "A: Don't be rude when you quit your job. <br> B: You're right, I don't want to burn bridges." },
+            { "idiom": "Bury the hatchet", "trans": "화해하다", "example": "A: Aren't you still fighting with Sarah? <br> B: No, we buried the hatchet last week." },
+            { "idiom": "Butter someone up", "trans": "~에게 아첨하다", "example": "A: Why are you being so nice to the boss? <br> B: I'm trying to butter him up before I ask for a raise." },
+            { "idiom": "Can't stand (something/someone)", "trans": "~을 참을 수 없다", "example": "A: Let's listen to some classical music. <br> B: Ugh, I can't stand classical music." },
+            { "idiom": "Catch-22", "trans": "진퇴양난, 모순적인 상황", "example": "A: I need experience to get a job, but I need a job to get experience. <br> B: It's a classic Catch-22." },
+            { "idiom": "Chew someone out", "trans": "~를 호되게 꾸짖다", "example": "A: The boss looks angry. <br> B: He just chewed me out for being late." },
+            { "idiom": "Close, but no cigar", "trans": "아깝다, 거의 맞았는데", "example": "A: Is the answer 42? <br> B: Close, but no cigar. It's 43." },
+            { "idiom": "Come rain or shine", "trans": "무슨 일이 있어도", "example": "A: Will the festival be canceled if it rains? <br> B: No, it's happening come rain or shine." },
+            { "idiom": "Compare apples and oranges", "trans": "전혀 다른 것을 비교하다", "example": "A: Which is better, a car or a bicycle? <br> B: You can't compare them. It's like comparing apples and oranges." },
+            { "idiom": "Cross that bridge when you come to it", "trans": "닥치면 생각하자", "example": "A: What if we run out of money on our trip? <br> B: Let's cross that bridge when we come to it." },
+            { "idiom": "Cut to the chase", "trans": "바로 본론으로 들어가다", "example": "A: This meeting is taking forever. <br> B: I agree. Let's cut to the chase." },
+            { "idiom": "Down to earth", "trans": "현실적인, 실제적인", "example": "A: She's a huge movie star, but she's so normal. <br> B: I know, she's very down to earth." },
+            { "idiom": "Draw the line", "trans": "선을 긋다, 한계를 정하다", "example": "A: I'll help you, but I won't do your work for you. <br> B: I have to draw the line somewhere." },
+            { "idiom": "Drop someone a line", "trans": "~에게 편지/메시지를 보내다", "example": "A: Keep in touch! <br> B: I will. I'll drop you a line when I get there." },
+            { "idiom": "Easy does it", "trans": "조심조심, 천천히", "example": "A: This box is heavy. <br> B: Easy does it. Don't drop it." },
+            { "idiom": "Eat humble pie", "trans": "잘못을 인정하다", "example": "A: He insisted he was right, but the facts proved him wrong. <br> B: He had to eat humble pie." },
+            { "idiom": "Eighty-six (86)", "trans": "(손님을) 내쫓다, (물건을) 빼다", "example": "A: That customer is too drunk. <br> B: You're right. We need to 86 him." },
+            { "idiom": "Elephant in the room", "trans": "(The elephant...와 동일)", "example": "A: We need to discuss why the project failed. <br> B: Let's address the elephant in the room." },
+            { "idiom": "Every dog has its day", "trans": "쥐구멍에도 볕들 날 있다", "example": "A: I never win anything. <br> B: Don't worry. Every dog has its day." },
+            { "idiom": "Fall on deaf ears", "trans": "무시당하다", "example": "A: I warned him not to do it. <br> B: But your advice fell on deaf ears." },
+            { "idiom": "Field day", "trans": "신나는 날, 마음껏 즐기는 날", "example": "A: The kids loved the zoo. <br> B: They really had a field day." },
+            { "idiom": "Find one's feet", "trans": "자리를 잡다, 익숙해지다", "example": "A: How's your new job? <br> B: It's been tough, but I'm starting to find my feet." },
+            { "idiom": "Fly off the handle", "trans": "버럭 화를 내다", "example": "A: I only made a small mistake. <br> B: I don't know why he flew off the handle like that." },
+            { "idiom": "For crying out loud", "trans": "맙소사, 제발 좀 (불만)", "example": "A: Will you stop making that noise? <br> B: For crying out loud, I'm trying to work!" },
+            { "idiom": "From scratch", "trans": "처음부터, 아무것도 없이", "example": "A: This cake is delicious. <br> B: Thanks, I made it from scratch." },
+            { "idiom": "Get a word in edgewise", "trans": "(대화에) 끼어들 틈을 찾다", "example": "A: He talks so much. <br> B: I know, it's impossible to get a word in edgewise." },
+            { "idiom": "Get down to brass tacks", "trans": "핵심을 다루다", "example": "A: We've chatted enough. <br> B: Let's get down to brass tacks." },
+            { "idiom": "Get your act together", "trans": "정신 차리다, 제대로 하다", "example": "A: I'm always late for work. <br> B: You need to get your act together, or you'll be fired." },
+            { "idiom": "Give someone the cold shoulder", "trans": "~를 쌀쌀맞게 대하다", "example": "A: Is Sarah mad at me? <br> B: I think so. She gave me the cold shoulder all day." },
+            { "idiom": "Go against the grain", "trans": "흐름을 거스르다", "example": "A: Everyone is following that trend. <br> B: I know, but I like to go against the grain." },
+            { "idiom": "Go cold turkey", "trans": "(나쁜 습관을) 단번에 끊다", "example": "A: How did you quit smoking? <br> B: I went cold turkey." },
+            { "idiom": "Go out on a limb", "trans": "위험을 감수하다", "example": "A: I'm going to go out on a limb and predict we'll double our sales. <br> B: That's a bold prediction." },
+            { "idiom": "Greased lightning", "trans": "쏜살같이 빠른 것", "example": "A: Wow, he finished the race first! <br> B: He's like greased lightning!" },
+            { "idiom": "Have a change of heart", "trans": "마음이 바뀌다", "example": "A: I thought you were moving to Paris. <br> B: I was, but I had a change of heart." },
+            { "idiom": "Have a chip on one's shoulder", "trans": "억울해하다, 시비조이다", "example": "A: He always seems angry. <br> B: He's had a chip on his shoulder ever since he lost his job." },
+            { "idiom": "Have one's head in the clouds", "trans": "몽상에 잠겨있다", "example": "A: He's always daydreaming. <br> B: Yeah, he has his head in the clouds." },
+            { "idiom": "Hearsay", "trans": "풍문, 소문", "example": "A: Is it true that the company is closing? <br> B: I don't know for sure. It's just hearsay." },
+            { "idiom": "Hit the ground running", "trans": "(새로운 일을) 바로 활기차게 시작하다", "example": "A: How's the new employee? <br> B: She hit the ground running. She's already contributing." },
+            { "idiom": "Hold your horses", "trans": "잠깐만, 진정해", "example": "A: Let's go! Let's go! <br> B: Hold your horses! I'm not ready yet." },
+            { "idiom": "If the shoe fits, wear it", "trans": "(비난이) 맞다면 인정해라", "example": "A: Are you calling me lazy? <br> B: Well, if the shoe fits, wear it." },
+            { "idiom": "In a nutshell", "trans": "아주 간단히 말해서", "example": "A: What is the book about? <br> B: In a nutshell, it's about a man who fights a dragon." },
+            { "idiom": "In broad daylight", "trans": "백주대낮에", "example": "A: Someone stole my bike from outside the store. <br> B: In broad daylight? That's bold." },
+            { "idiom": "In leaps and bounds", "trans": "급속도로", "example": "A: Your English has improved so much. <br> B: Thanks! It's been improving in leaps and bounds." },
+            { "idiom": "In the long run", "trans": "결국에는", "example": "A: Studying hard is boring. <br> B: But it will pay off in the long run." },
+            { "idiom": "In the buff", "trans": "알몸으로", "example": "A: Why is he running outside? <br> B: I don't know, but he's in the buff!" },
+            { "idiom": "In the same boat", "trans": "같은 처지에 있는", "example": "A: I'm really worried about this exam. <br> B: Me too. We're in the same boat." },
+            { "idiom": "It's not rocket science", "trans": "그렇게 어려운 일이 아니야", "example": "A: I can't figure out this new coffee machine. <br> B: Come on, it's not rocket science." },
+            { "idiom": "Jack of all trades, master of none", "trans": "뭐든 조금씩 하지만 잘하는 건 없음", "example": "A: He can play guitar, paint, and code a little. <br> B: He's a Jack of all trades, master of none." },
+            { "idiom": "Jaywalk", "trans": "무단횡단하다", "example": "A: Don't jaywalk here. It's dangerous. <br> B: You're right. Let's use the crosswalk." },
+            { "idiom": "Keep a low profile", "trans": "세간의 이목을 피하다", "example": "A: After the scandal, the politician kept a low profile. <br> B: I haven't seen him in the news at all." },
+            { "idiom": "Keep someone posted", "trans": "~에게 계속 소식을 알리다", "example": "A: Let me know how your interview goes. <br> B: I will. I'll keep you posted." },
+            { "idiom": "Kick the bucket", "trans": "죽다 (비속어)", "example": "A: Did you hear about old Mr. Smith? <br> B: Yes, I heard he kicked the bucket." },
+            { "idiom": "Know the ropes", "trans": "요령을 알다", "example": "A: You seem to know what you're doing. <br> B: I've been working here for 10 years. I know the ropes." },
+            { "idiom": "Let bygones be bygones", "trans": "지나간 일은 잊어버리다", "example": "A: I'm still upset about our fight. <br> B: That was months ago. Let's let bygones be bygones." },
+            { "idiom": "Like pulling teeth", "trans": "매우 힘든 일", "example": "A: How was the meeting? <br> B: Getting him to agree was like pulling teeth." },
+            { "idiom": "Lose one's touch", "trans": "솜씨가 무뎌지다", "example": "A: I used to be a great basketball player. <br> B: Looks like you've lost your touch." },
+            { "idiom": "Make ends meet", "trans": "근근이 먹고 살다, 수지를 맞추다", "example": "A: It's hard to pay all the bills. <br> B: I know, it's tough to make ends meet." },
+            { "idiom": "Make waves", "trans": "풍파를 일으키다", "example": "A: He's always arguing in meetings. <br> B: He loves to make waves." },
+            { "idiom": "Mum's the word", "trans": "비밀이야, 쉿", "example": "A: Don't tell anyone about the surprise. <br> B: Don't worry, mum's the word." },
+            { "idiom": "Murphy's Law", "trans": "머피의 법칙 (안 좋은 일은 꼭 일어난다)", "example": "A: I was late, and of course, I spilled coffee on my shirt. <br> B: Classic Murphy's Law." },
+            { "idiom": "Neck and neck", "trans": "막상막하", "example": "A: Who's winning the race? <br> B: They're neck and neck." },
+            { "idiom": "No dice", "trans": "안돼, 소용없어", "example": "A: Can I borrow your car? <br> B: No dice. I need it." },
+            { "idiom": "No strings attached", "trans": "아무 조건 없이", "example": "A: He gave me this gift for free? <br> B: Yes, no strings attached." },
+            { "idiom": "Not have a clue", "trans": "전혀 모르다", "example": "A: What's the answer to question 5? <br> B: I don't have a clue." },
+            { "idiom": "Off the record", "trans": "비공식적으로, 기사화하지 않는 조건으로", "example": "A: Can I tell you something? <br> B: Sure. <br> A: Off the record, I think the boss is quitting." },
+            { "idiom": "On pins and needles", "trans": "(긴장/초조해서) 바늘방석에 앉은 듯한", "example": "A: I'm waiting for my test results. <br> B: I'm on pins and needles." },
+            { "idiom": "On the back burner", "trans": "뒤로 미루다, 보류하다", "example": "A: What about that new project? <br> B: We put it on the back burner to focus on this one." },
+            { "idiom": "Out of one's league", "trans": "(상대/일이) 감당하기 힘든 수준인", "example": "A: Do you think I should ask her out? <br> B: She's beautiful and smart. She's out of your league." },
+            { "idiom": "Out on a limb", "trans": "(Go out on a limb와 동일)", "example": "A: I'm going to go out on a limb and say this will be our best year. <br> B: I hope you're right." },
+            { "idiom": "Over the top", "trans": "과장된, 도가 지나친", "example": "A: His reaction was a bit much. <br> B: I agree, it was completely over the top." },
+            { "idiom": "Paint the town red", "trans": "(나가서) 신나게 놀다", "example": "A: We just finished our exams! <br> B: Let's go out and paint the town red!" },
+            { "idiom": "Pass with flying colors", "trans": "우수한 성적으로 통과하다", "example": "A: How did you do on your exam? <br> B: I passed with flying colors!" },
+            { "idiom": "Pecking order", "trans": "서열", "example": "A: Who's in charge here? <br> B: You have to understand the pecking order in this office." },
+            { "idiom": "Pick up the slack", "trans": "(다른 사람의) 부족한 부분을 채우다", "example": "A: Tom is on vacation this week. <br> B: We'll have to pick up the slack." },
+            { "idiom": "Pull strings", "trans": "배후에서 조종하다, 빽을 쓰다", "example": "A: How did he get that job? <br> B: His father pulled some strings." },
+            { "idiom": "Put a sock in it", "trans": "조용히 해!", "example": "A: He kept talking during the movie. <br> B: I told him to put a sock in it." },
+            { "idiom": "Put one's foot down", "trans": "단호히 반대하다", "example": "A: My son wanted to drop out of school. <br> B: I had to put my foot down." },
+            { "idiom": "Rags to riches", "trans": "무일푼에서 부자가 됨", "example": "A: His story is amazing. <br> B: Yes, it's a true rags to riches tale." },
+            { "idiom": "Rain cats and dogs", "trans": "비가 억수같이 쏟아지다", "example": "A: Look outside! <br> B: Wow, it's raining cats and dogs." },
+            { "idiom": "Ring a bell", "trans": "들어본 것 같다, 기억이 날 듯하다", "example": "A: Do you know John Smith? <br> B: The name rings a bell, but I can't place him." },
+            { "idiom": "Rule of thumb", "trans": "경험에 바탕을 둔 규칙, 어림짐작", "example": "A: How much water should I add? <br> B: As a rule of thumb, use two cups of water for one cup of rice." },
+            { "idiom": "Run-of-the-mill", "trans": "지극히 평범한", "example": "A: How was the movie? <br> B: It was just a run-of-the-mill action film." },
+            { "idiom": "Scapegoat", "trans": "희생양", "example": "A: The project failed, and they blamed him. <br> B: He was just a scapegoat." },
+            { "idiom": "Sell like hotcakes", "trans": "날개 돋친 듯 팔리다", "example": "A: The new game is really popular. <br> B: I know, it's selling like hotcakes." },
+            { "idiom": "Sixth sense", "trans": "육감", "example": "A: How did you know I was here? <br> B: I guess I have a sixth sense." },
+            { "idiom": "Skate on thin ice", "trans": "위험한 짓을 하다", "example": "A: He's been late three times this week. <br> B: He's skating on thin ice with the boss." },
+            { "idiom": "Sleep on it", "trans": "하룻밤 자면서 생각해보다", "example": "A: Should I accept the job offer? <br> B: Why don't you sleep on it and decide tomorrow." },
+            { "idiom": "Small talk", "trans": "잡담", "example": "A: I don't like networking events. <br> B: I know, I hate making small talk." },
+            { "idiom": "Smell a rat", "trans": "낌새를 채다, 수상한 냄새를 맡다", "example": "A: He said he found a $100 bill on the street. <br> B: I smell a rat. I think he stole it." }
+        ];
+
+        let currentPage = 1;
+        const itemsPerPage = 20;
+        let filteredData = [...idiomData];
+
+        const idiomContainer = document.getElementById('idiomContainer');
+        const searchInput = document.getElementById('searchInput');
+        const paginationControls = document.getElementById('paginationControls');
+        const paginationControlsBottom = document.getElementById('paginationControlsBottom');
+
+        // TTS Function
+        function speakText(text, btnElement) {
+            // Cancel previous speech
+            window.speechSynthesis.cancel();
+
+            // Create new utterance
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9; // Slightly slower for clarity
+            
+            // Visual feedback
+            if(btnElement) {
+                btnElement.classList.add('highlight-playing');
+                utterance.onend = () => {
+                    btnElement.classList.remove('highlight-playing');
+                };
+            }
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function renderIdioms() {
+            idiomContainer.innerHTML = '';
+            
+            const searchTerm = searchInput.value.toLowerCase();
+            filteredData = idiomData.filter(item => 
+                item.idiom.toLowerCase().includes(searchTerm) || 
+                item.trans.toLowerCase().includes(searchTerm)
+            );
+
+            if (filteredData.length === 0) {
+                idiomContainer.innerHTML = `<p class="text-center text-gray-500">검색 결과가 없습니다.</p>`;
+                renderPagination(0);
+                return;
+            }
+
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            if (currentPage > totalPages) currentPage = 1;
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageData = filteredData.slice(startIndex, endIndex);
+
+            pageData.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'idiom-card bg-white p-4 sm:p-5 rounded-lg shadow-sm border border-gray-200';
+                
+                // Clean example text for TTS (remove HTML tags)
+                const cleanExample = item.example.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div class="flex-grow">
+                            <div class="flex items-center">
+                                <h3 class="text-lg sm:text-xl font-semibold text-blue-700">${item.idiom}</h3>
+                                <button class="speak-btn text-blue-500 hover:text-blue-700 ml-2" title="관용구 듣기" onclick="event.stopPropagation(); speakText('${item.idiom.replace(/'/g, "\\'")}', this)">
+                                    🔊
+                                </button>
+                            </div>
+                            <p class="text-gray-600 text-sm sm:text-base mt-1">${item.trans}</p>
+                        </div>
+                        <span class="arrow text-blue-500 text-2xl transform ml-4">&#x276F;</span>
+                    </div>
+                    <div class="example-content mt-3 pt-3 border-t border-gray-100 text-gray-700 text-sm sm:text-base">
+                        <div class="flex items-center mb-2">
+                            <p class="font-medium mr-2">예시 대화:</p>
+                            <button class="speak-btn text-blue-500 hover:text-blue-700 w-6 h-6 text-xs" title="예시 대화 듣기" onclick="event.stopPropagation(); speakText('${cleanExample.replace(/'/g, "\\'")}', this)">
+                                🔊
+                            </button>
+                        </div>
+                        <div class="leading-relaxed bg-gray-50 p-3 rounded">${item.example}</div>
+                    </div>
+                `;
+                idiomContainer.appendChild(card);
+            });
+
+            renderPagination(totalPages);
+        }
+
+        function renderPagination(totalPages) {
+            paginationControls.innerHTML = '';
+            paginationControlsBottom.innerHTML = '';
+            
+            if (totalPages <= 1) return;
+
+            const createButton = (text, page, isDisabled = false, isActive = false) => {
+                const btn = document.createElement('button');
+                btn.className = `pagination-btn px-3 py-1 sm:px-4 sm:py-2 border rounded-md text-sm sm:text-base font-medium ${isDisabled ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 border-gray-300 hover:bg-blue-50'} ${isActive ? 'active' : ''}`;
+                btn.innerHTML = text;
+                btn.disabled = isDisabled;
+                if (!isDisabled) {
+                    btn.onclick = () => {
+                        currentPage = page;
+                        renderIdioms();
+                        window.scrollTo(0, 0);
+                    };
+                }
+                return btn;
+            };
+
+            const paginationFragment = document.createDocumentFragment();
+            paginationFragment.appendChild(createButton('이전', currentPage - 1, currentPage === 1));
+
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+
+            if (currentPage <= 3) {
+                endPage = Math.min(5, totalPages);
+            }
+            if (currentPage > totalPages - 3) {
+                startPage = Math.max(1, totalPages - 4);
+            }
+
+            if (startPage > 1) {
+                paginationFragment.appendChild(createButton('1', 1));
+                if (startPage > 2) {
+                    const dots = document.createElement('span');
+                    dots.className = 'px-2 py-1 text-gray-500';
+                    dots.textContent = '...';
+                    paginationFragment.appendChild(dots);
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                paginationFragment.appendChild(createButton(i, i, false, i === currentPage));
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const dots = document.createElement('span');
+                    dots.className = 'px-2 py-1 text-gray-500';
+                    dots.textContent = '...';
+                    paginationFragment.appendChild(dots);
+                }
+                paginationFragment.appendChild(createButton(totalPages, totalPages));
+            }
+
+            paginationFragment.appendChild(createButton('다음', currentPage + 1, currentPage === totalPages));
+            
+            paginationControls.appendChild(paginationFragment.cloneNode(true));
+            paginationControlsBottom.appendChild(paginationFragment);
+        }
+
+        idiomContainer.addEventListener('click', (e) => {
+            // If the clicked element is a button or inside a button (like the icon), do nothing here
+            // (The button's onclick handles the logic and stopPropagation handles the bubbling)
+            if (e.target.closest('button')) return;
+
+            const card = e.target.closest('.idiom-card');
+            if (!card) return;
+            
+            const exampleContent = card.querySelector('.example-content');
+            const cardHeader = card.querySelector('.arrow').parentElement; // Get the header container
+            
+            card.classList.toggle('expanded');
+            exampleContent.classList.toggle('expanded');
+        });
+
+        searchInput.addEventListener('keyup', () => {
+            currentPage = 1;
+            renderIdioms();
+        });
+
+        document.addEventListener('DOMContentLoaded', renderIdioms);
+
+    </script>
+</body>
+</html>
