@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>비즈니스 영어 핵심 패턴 (Business English Patterns)</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --accent: #ef4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', AppleSDGothicNeo, 'Malgun Gothic', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: var(--secondary-color);
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .intro {
+            color: var(--text-sub);
+            margin-top: 10px;
+            font-size: 15px;
+        }
+
+        .section-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            font-size: 20px;
+            color: var(--primary-color);
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .situation-group {
+            margin-bottom: 20px;
+        }
+
+        .situation-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+            display: block;
+            background: #eef2ff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            width: fit-content;
+        }
+
+        .phrase-item {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: background 0.2s;
+        }
+
+        .phrase-item:hover {
+            border-color: var(--primary-color);
+            background-color: #f9fafb;
+        }
+
+        .text-content {
+            flex: 1;
+            margin-right: 15px;
+        }
+
+        .en-text {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--text-main);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .kr-text {
+            font-size: 14px;
+            color: var(--text-sub);
+        }
+
+        .play-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s, background-color 0.2s;
+            flex-shrink: 0;
+        }
+
+        .play-btn:hover {
+            background-color: var(--secondary-color);
+            transform: scale(1.05);
+        }
+
+        .play-btn:active {
+            transform: scale(0.95);
+        }
+
+        .play-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .tip-box {
+            background-color: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 12px;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #92400e;
+        }
+
+        .roleplay-box {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .dialogue-line {
+            margin-bottom: 15px;
+        }
+
+        .speaker {
+            font-weight: bold;
+            font-size: 13px;
+            margin-bottom: 2px;
+            display: block;
+        }
+        
+        .speaker.you { color: var(--primary-color); }
+        .speaker.director { color: var(--accent); }
+
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            .phrase-item {
+                flex-direction: column;
+            }
+            .play-btn {
+                width: 100%;
+                border-radius: 8px;
+                margin-top: 10px;
+                height: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>💼 Business English Key Patterns</h1>
+        <p class="intro">직장 생활에서 가장 난감하지만 꼭 필요한 3가지 상황별 핵심 표현</p>
+    </header>
+
+    <div class="section-card">
+        <div class="section-title">1. 정중하게 거절하거나 이견 제시하기</div>
+        
+        <div class="situation-group">
+            <span class="situation-label">상사에게 완곡하게 거절할 때</span>
+            <div class="phrase-item">
+                <div class="text-content">
+                    <span class="en-text">I'm afraid that might be difficult due to the current schedule.</span>
+                    <span class="kr-text">죄송하지만 현재 일정상 그건 좀 어려울 것 같습니다.</span>
+                </div>
+                <button class="play-btn" aria-label="듣기">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+            <div class="phrase-item">
+                <div class="text-content">
+                    <span class="en-text">I see your point, but I have concerns about the budget.</span>
+                    <span class="kr-text">말씀하신 요지는 알겠습니다만, 예산 부분에 우려가 있습니다.</span>
+                </div>
+                <button class="play-btn" aria-label="듣기">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="situation-group">
+            <span class="situation-label">동료/부하직원에게 명확히 안 된다고 할 때</span>
+            <div class="phrase-item">
+                <div class="text-content">
+                    <span class="en-text">I don't think that's feasible right now.</span>
+                    <span class="kr-text">지금 상황에서 그건 실행 불가능해 보여요.</span>
+                </div>
+                <button class="play-btn" aria-label="듣기">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+            <div class="phrase-item">
+                <div class="text-content">
+                    <span class="en-text">Let's hold off on that for now.</span>
+                    <span class="kr-text">그건 일단 보류합시다.</span>
+                </div>
+                <button class="play-btn" aria-label="듣기">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="tip-box">
+            💡 <strong>Tip:</strong> 문장 앞에 "Unfortunately," (유감스럽게도)나 "With all due respect," (죄송한 말씀이지만)를 붙이면 훨씬 부드러워집니다.
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-title">2. 설득하고 제안하기</div>
+
+        <div class="situation-group">
+            <span class="situation-label">강력하게 추천할 때 (확신 100%)</span>
+            <div class="phrase-item">
+                <div class="text-content">
+                    <span class="en-text">I highly recommend that we proceed with Plan A.</span>
+                    <span class="kr-text">저는 A안으로 진행하는 것을 강력히 추천합니다.</span>
+                </div>
+                <button class="play-btn" aria-label="듣기">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+            <div class="phrase-item">
+                <div class="text-content">
+                    <span class="en-text">There is no doubt that this is the best option.</span>
+                    <span class="kr-text">이게 최선의 선택임에는 의심의 여지가 없습니다.</span>
+                </div>
+                <button class="play-btn" aria-label="듣기">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="situation-group">
+            <span class="situation-label">부드럽게 제안할 때 (의견 제시)</span>
+            <div class="phrase-item">
+                <div class="text-content">
+                    <span class="en-text">It might be a good idea to look into other vendors.</span>
+                    <span class="kr-text">다른 업체들도 알아보는 게 좋은 생각일 것 같습니다.</span>
+                </div>
+                <button class="play-btn" aria-label="듣기">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+            <div class="phrase-item">
+                <div class="text-content">
+                    <span class="en-text">Why don't we try a different approach?</span>
+                    <span class="kr-text">다른 접근 방식을 시도해 보는 건 어떨까요?</span>
+                </div>
+                <button class="play-btn" aria-label="듣기">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-title">3. 시간 벌기 및 확인 요청</div>
+
+        <div class="situation-group">
+            <span class="situation-label">확인 후 다시 보고하겠다고 할 때</span>
+            <div class="phrase-item">
+                <div class="text-content">
+                    <span class="en-text">Let me double-check and get back to you immediately.</span>
+                    <span class="kr-text">다시 한번 확인해 보고 즉시 말씀드리겠습니다.</span>
+                </div>
+                <button class="play-btn" aria-label="듣기">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+            <div class="phrase-item">
+                <div class="text-content">
+                    <span class="en-text">I need to verify the numbers first. I'll update you by the end of the day.</span>
+                    <span class="kr-text">수치를 먼저 검증해야 합니다. 오늘 일과 전까지 업데이트드리겠습니다.</span>
+                </div>
+                <button class="play-btn" aria-label="듣기">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="situation-group">
+            <span class="situation-label">자료를 지금 당장 가지고 있지 않을 때</span>
+            <div class="phrase-item">
+                <div class="text-content">
+                    <span class="en-text">I don't have the data on hand right now.</span>
+                    <span class="kr-text">지금 당장 수중에 그 자료가 없습니다.</span>
+                </div>
+                <button class="play-btn" aria-label="듣기">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+            <div class="phrase-item">
+                <div class="text-content">
+                    <span class="en-text">Can I email you the details in 10 minutes?</span>
+                    <span class="kr-text">10분 뒤에 이메일로 세부 내용을 보내드려도 될까요?</span>
+                </div>
+                <button class="play-btn" aria-label="듣기">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-title">📝 실전 응용 (Roleplay)</div>
+        <p style="margin-bottom: 20px;">상황: 임원(Director)이 갑자기 무리한 일정 당기기를 요구함.</p>
+        
+        <div class="roleplay-box">
+            <div class="phrase-item">
+                <div class="text-content">
+                    <span class="speaker director">Director:</span>
+                    <span class="en-text">Can we finish this project by this Friday?</span>
+                    <span class="kr-text">이번 주 금요일까지 끝낼 수 있나?</span>
+                </div>
+                <button class="play-btn" aria-label="듣기">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+
+            <div class="phrase-item">
+                <div class="text-content">
+                    <span class="speaker you">You (Manager):</span>
+                    <span class="en-text">Unfortunately, that might be tough due to the pending approval from Legal team. Let me check with them and let you know if we can expedite it.</span>
+                    <span class="kr-text">죄송하지만 법무팀 승인 대기 건 때문에 그건 좀 어려울 것 같습니다. 그쪽이랑 확인해 보고 더 빨리 진행할 수 있는지 말씀드리겠습니다.</span>
+                </div>
+                <button class="play-btn" aria-label="듣기">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+            
+            <div class="tip-box" style="background-color: #e0f2fe; border-left-color: #2563eb; color: #1e40af;">
+                👉 <strong>패턴 분석:</strong> Unfortunately (쿠션어) + Might be tough (완곡한 거절) + Let me check (시간 벌기/대안)
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Web Speech API 기능 확인
+    if (!('speechSynthesis' in window)) {
+        alert("이 브라우저는 음성 재생 기능을 지원하지 않습니다. 크롬이나 엣지 브라우저를 사용해주세요.");
+    }
+
+    const buttons = document.querySelectorAll('.play-btn');
+
+    buttons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // 현재 재생 중인 오디오가 있다면 취소
+            window.speechSynthesis.cancel();
+
+            // 버튼의 부모 요소에서 영어 텍스트 찾기
+            const container = this.closest('.phrase-item');
+            const textToSpeak = container.querySelector('.en-text').innerText;
+
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            
+            // 언어 설정 (미국식 영어)
+            utterance.lang = 'en-US'; 
+            utterance.rate = 0.9; // 속도 (1.0이 기본, 0.9는 약간 또박또박하게)
+
+            // 음성 재생 시작 시 시각적 효과
+            this.style.backgroundColor = '#ef4444'; // 빨간색으로 변경 (재생중)
+            
+            // 음성 재생 종료 시 시각적 효과 복구
+            utterance.onend = () => {
+                this.style.backgroundColor = ''; // 원래 색으로 복구
+            };
+
+            window.speechSynthesis.speak(utterance);
+        });
+    });
+</script>
+
+</body>
+</html>
